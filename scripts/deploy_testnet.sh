@@ -48,10 +48,11 @@ stellar contract build
 
 # La carpeta de destino (wasm32v1-none, wasm32-unknown-unknown, etc.)
 # depende de la versión de stellar-cli, así que se busca el .wasm en vez
-# de asumir una ruta fija.
-WASM_PATH="$(find "$REPO_ROOT/target" -type f -name "greenledger.wasm" -path "*/release/*" ! -name "*.optimized.wasm" | head -n1)"
+# de asumir una ruta fija. El crate no pertenece a un workspace, así que
+# cargo deja el target/ dentro de contracts/greenledger/, no en la raíz.
+WASM_PATH="$(find "$CONTRACT_DIR/target" -type f -name "greenledger.wasm" -path "*/release/*" ! -name "*.optimized.wasm" | head -n1)"
 if [ -z "$WASM_PATH" ]; then
-  echo "No se encontró greenledger.wasm bajo $REPO_ROOT/target. ¿Falló la compilación?" >&2
+  echo "No se encontró greenledger.wasm bajo $CONTRACT_DIR/target. ¿Falló la compilación?" >&2
   exit 1
 fi
 stellar contract optimize --wasm "$WASM_PATH" || true

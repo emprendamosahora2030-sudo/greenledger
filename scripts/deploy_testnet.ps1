@@ -53,8 +53,9 @@ finally {
 
 # La carpeta de destino (wasm32v1-none, wasm32-unknown-unknown, etc.)
 # depende de la versión de stellar-cli, así que se busca el .wasm en vez
-# de asumir una ruta fija.
-$TargetDir = Join-Path $RepoRoot "target"
+# de asumir una ruta fija. El crate no pertenece a un workspace, así que
+# cargo deja el target/ dentro de contracts/greenledger/, no en la raíz.
+$TargetDir = Join-Path $ContractDir "target"
 $WasmFile = Get-ChildItem -Path $TargetDir -Recurse -Filter "greenledger.wasm" -ErrorAction SilentlyContinue |
     Where-Object { $_.FullName -match "[\\/]release[\\/]" -and $_.Name -notmatch "\.optimized\.wasm$" } |
     Select-Object -First 1
