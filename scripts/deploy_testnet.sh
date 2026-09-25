@@ -14,6 +14,7 @@
 #      de prueba.
 #   7. Transfiere ese crédito a "greenledger-comprador".
 #   8. Retira el crédito a nombre de "EMPRESA_DEMO".
+#   9. Consulta el historial de propiedad del crédito (lectura, sin firma).
 #
 # Requisitos: stellar-cli (`stellar`) v23 o superior (probado con v28.0.0)
 # instalado y en el PATH, y acceso de
@@ -133,6 +134,18 @@ stellar contract invoke \
   -- retirar_credito \
   --id "$CREDITO_ID" \
   --beneficiario_retiro "$BENEFICIARIO_RETIRO"
+
+echo "== 9 historial_credito(${CREDITO_ID}) =="
+# Lectura pública: se simula, no se envía transacción ni cobra comisión.
+stellar contract invoke \
+  --id "$CONTRACT_ID" \
+  --source "$ADMIN_ID" \
+  --network "$RED" \
+  --send=no \
+  -- historial_credito \
+  --id "$CREDITO_ID" \
+  --desde 0 \
+  --limite 50
 
 echo ""
 echo "============================================================"

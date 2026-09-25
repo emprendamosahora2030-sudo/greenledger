@@ -8,9 +8,10 @@
 //! dirección distinta a la esperada, para demostrar que la operación
 //! falla.
 #![cfg(test)]
+extern crate std;
 
 use super::*;
-use soroban_sdk::testutils::{Address as _, MockAuth, MockAuthInvoke};
+use soroban_sdk::testutils::{Address as _, Ledger, MockAuth, MockAuthInvoke};
 use soroban_sdk::{Env, IntoVal};
 
 fn crear_hash(env: &Env, semilla: u8) -> BytesN<32> {
@@ -337,4 +338,192 @@ fn verificar_credito_inexistente_falla() {
     let id = Symbol::new(&ctx.env, "NO_EXISTE");
     let resultado = ctx.client.try_verificar_credito(&id);
     assert_eq!(resultado, Err(Ok(Error::CreditoNoExiste)));
+}
+
+// --- Historial de propiedad --------------------------------------------
+
+/// Emite un crédito de prueba de 10 t a nombre de `propietario`.
+fn emitir(ctx: &Contexto, id: &Symbol, propietario: &Address) {
+    let hash = crear_hash(&ctx.env, 1);
+    let proyecto = Symbol::new(&ctx.env, "PROY01");
+    ctx.client
+        .emitir_credito(&ctx.verificador, id, propietario, &10, &hash, &proyecto);
+}
+
+/// Mueve el ledger simulado, para que cada movimiento quede con un
+/// número de ledger y un timestamp distintos.
+fn avanzar_ledger(env: &Env, secuencia: u32, timestamp: u64) {
+    env.ledger().with_mut(|l| {
+        l.sequence_number = secuencia;
+        l.timestamp = timestamp;
+    });
+}
+
+#[test]
+fn historial_registra_emision_transferencias_y_retiro() {
+    let ctx = setup();
+    let a = Address::generate(&ctx.env);
+    let b = Address::generate(&ctx.env);
+    let c = Address::generate(&ctx.env);
+    let id = Symbol::new(&ctx.env, "CRED001");
+    let beneficiario = Symbol::new(&ctx.env, "EMPRESA_DEMO");
+
+    avanzar_ledger(&ctx.env, 100, 1_000);
+    emitir(&ctx, &id, &a);
+    avanzar_ledger(&ctx.env, 200, 2_000);
+    ctx.client.transferir_credito(&id, &b);
+    avanzar_ledger(&ctx.env, 300, 3_000);
+    ctx.client.transferir_credito(&id, &c);
+    avanzar_ledger(&ctx.env, 400, 4_000);
+    ctx.client.retirar_credito(&id, &beneficiario);
+
+    assert_eq!(ctx.client.total_movimientos(&id), 4);
+    let historial = ctx.client.historial_credito(&id, &0, &10);
+    assert_eq!(historial.len(), 4);
+
+    assert_eq!(
+        historial.get_unchecked(0),
+        Movimiento {
+            tipo: TipoMovimiento::Emision,
+            propietario_anterior: None,
+            propietario: a.clone(),
+            beneficiario_retiro: None,
+            ledger: 100,
+            timestamp: 1_000,
+        }
+    );
+    assert_eq!(
+        historial.get_unchecked(1),
+        Movimiento {
+            tipo: TipoMovimiento::Transferencia,
+            propietario_anterior: Some(a.clone()),
+            propietario: b.clone(),
+            beneficiario_retiro: None,
+            ledger: 200,
+            timestamp: 2_000,
+        }
+    );
+    assert_eq!(
+        historial.get_unchecked(2),
+        Movimiento {
+            tipo: TipoMovimiento::Transferencia,
+            propietario_anterior: Some(b.clone()),
+            propietario: c.clone(),
+            beneficiario_retiro: None,
+            ledger: 300,
+            timestamp: 3_000,
+        }
+    );
+    assert_eq!(
+        historial.get_unchecked(3),
+        Movimiento {
+            tipo: TipoMovimiento::Retiro,
+            propietario_anterior: Some(c.clone()),
+            propietario: c.clone(),
+            beneficiario_retiro: Some(beneficiario),
+            ledger: 400,
+            timestamp: 4_000,
+        }
+    );
+}
+
+#[test]
+fn historial_se_puede_paginar() {
+    let ctx = setup();
+    let id = Symbol::new(&ctx.env, "CRED001");
+    let mut duenos = std::vec::Vec::new();
+    for _ in 0..6 {
+        duenos.push(Address::generate(&ctx.env));
+    }
+
+    // 1 emisión + 5 transferencias = 6 movimientos.
+    emitir(&ctx, &id, &duenos[0]);
+    for dueno in &duenos[1..] {
+        ctx.client.transferir_credito(&id, dueno);
+    }
+    assert_eq!(ctx.client.total_movimientos(&id), 6);
+
+    let pagina = ctx.client.historial_credito(&id, &2, &3);
+    assert_eq!(pagina.len(), 3);
+    for (i, movimiento) in pagina.iter().enumerate() {
+        assert_eq!(movimiento.propietario, duenos[2 + i]);
+    }
+
+    // La última página puede venir incompleta.
+    assert_eq!(ctx.client.historial_credito(&id, &4, &10).len(), 2);
+    // Fuera de rango o con límite 0: lista vacía, no error.
+    assert_eq!(ctx.client.historial_credito(&id, &6, &10).len(), 0);
+    assert_eq!(ctx.client.historial_credito(&id, &u32::MAX, &u32::MAX).len(), 0);
+    assert_eq!(ctx.client.historial_credito(&id, &0, &0).len(), 0);
+}
+
+#[test]
+fn historial_recorta_el_limite_por_pagina() {
+    let ctx = setup();
+    let id = Symbol::new(&ctx.env, "CRED001");
+
+    emitir(&ctx, &id, &Address::generate(&ctx.env));
+    for _ in 0..MAX_MOVIMIENTOS_POR_PAGINA + 5 {
+        ctx.client
+            .transferir_credito(&id, &Address::generate(&ctx.env));
+    }
+
+    let pagina = ctx.client.historial_credito(&id, &0, &1_000);
+    assert_eq!(pagina.len(), MAX_MOVIMIENTOS_POR_PAGINA);
+}
+
+#[test]
+fn operaciones_fallidas_no_agregan_movimientos() {
+    let ctx = setup();
+    let propietario = Address::generate(&ctx.env);
+    let id = Symbol::new(&ctx.env, "CRED001");
+    let beneficiario = Symbol::new(&ctx.env, "EMPRESA_DEMO");
+
+    emitir(&ctx, &id, &propietario);
+
+    let falla = ctx.client.try_transferir_credito(&id, &propietario);
+    assert_eq!(falla, Err(Ok(Error::MismoPropietario)));
+    assert_eq!(ctx.client.total_movimientos(&id), 1);
+
+    ctx.client.retirar_credito(&id, &beneficiario);
+    let falla = ctx.client.try_retirar_credito(&id, &beneficiario);
+    assert_eq!(falla, Err(Ok(Error::CreditoRetirado)));
+    let falla = ctx
+        .client
+        .try_transferir_credito(&id, &Address::generate(&ctx.env));
+    assert_eq!(falla, Err(Ok(Error::CreditoRetirado)));
+    assert_eq!(ctx.client.total_movimientos(&id), 2);
+}
+
+#[test]
+fn historiales_son_independientes_por_credito() {
+    let ctx = setup();
+    let a = Address::generate(&ctx.env);
+    let b = Address::generate(&ctx.env);
+    let id1 = Symbol::new(&ctx.env, "CRED001");
+    let id2 = Symbol::new(&ctx.env, "CRED002");
+
+    emitir(&ctx, &id1, &a);
+    emitir(&ctx, &id2, &a);
+    ctx.client.transferir_credito(&id1, &b);
+
+    assert_eq!(ctx.client.total_movimientos(&id1), 2);
+    assert_eq!(ctx.client.total_movimientos(&id2), 1);
+    let historial2 = ctx.client.historial_credito(&id2, &0, &10);
+    assert_eq!(historial2.get_unchecked(0).propietario, a);
+}
+
+#[test]
+fn historial_de_credito_inexistente_falla() {
+    let ctx = setup();
+    let id = Symbol::new(&ctx.env, "NOEXISTE");
+
+    assert_eq!(
+        ctx.client.try_total_movimientos(&id),
+        Err(Ok(Error::CreditoNoExiste))
+    );
+    assert_eq!(
+        ctx.client.try_historial_credito(&id, &0, &10),
+        Err(Ok(Error::CreditoNoExiste))
+    );
 }

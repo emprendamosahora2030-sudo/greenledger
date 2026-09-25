@@ -89,9 +89,60 @@ Claves de almacenamiento (`DataKey`):
 - `Credito(Symbol)` — **persistent storage**. Un `CreditoCarbono` por
   id. Es la entidad central del contrato: cada id es un activo
   independiente con su propio historial de dueños.
+- `NumMovimientos(Symbol)` — persistent storage. Cuántas entradas tiene
+  el historial de propiedad de cada crédito.
+- `Movimiento(Symbol, u32)` — persistent storage. La entrada `n` (desde
+  0) del historial de propiedad de un crédito.
 - `TotalEmitido` / `TotalRetirado` — instance storage. Contadores
   acumulados en toneladas (`u64`), para reportes rápidos sin tener que
   recorrer todos los créditos.
+
+## Historial de propiedad
+
+El diferenciador de GreenLedger es la **trazabilidad pública e
+inmutable**: para cualquier crédito cualquiera puede consultar, sin
+firmar nada, la cadena completa de dueños desde la emisión hasta el
+retiro. Por eso el historial vive en el estado del contrato y no se
+reconstruye desde eventos, que dependen de que un indexador los haya
+guardado.
+
+```rust
+enum TipoMovimiento { Emision, Transferencia, Retiro }
+
+struct Movimiento {
+    tipo: TipoMovimiento,
+    propietario_anterior: Option<Address>, // None en la emisión
+    propietario: Address,                  // dueño tras el movimiento
+    beneficiario_retiro: Option<Symbol>,   // solo en retiros
+    ledger: u32,                           // para ubicarlo en un explorador
+    timestamp: u64,
+}
+```
+
+- **Append-only.** `emitir_credito`, `transferir_credito` y
+  `retirar_credito` agregan una entrada; ninguna función modifica ni
+  borra entradas anteriores. Toda operación fallida (p. ej. transferir
+  un crédito retirado) devuelve error y Soroban revierte la transacción
+  completa, así que nunca queda un movimiento a medias.
+- **Invariante.** La entrada 0 siempre es `Emision`, el
+  `propietario_anterior` de cada entrada `n > 0` es el `propietario` de
+  la entrada `n - 1`, y, si existe, `Retiro` es la última.
+- **Una clave por movimiento.** Cada entrada vive en su propia clave
+  `Movimiento(id, n)` en lugar de un único `Vec` creciente. Así el
+  historial no choca con el tamaño máximo de una entrada de ledger y
+  escribir un movimiento nuevo cuesta lo mismo sin importar cuántos haya
+  antes.
+- **Lectura paginada.** `historial_credito(id, desde, limite)` devuelve
+  como máximo `MAX_MOVIMIENTOS_POR_PAGINA` (50) entradas por llamada,
+  para mantenerse dentro de los límites de lectura de una invocación;
+  `total_movimientos(id)` da el total para paginar.
+- **TTL.** Cada entrada recibe la misma extensión que el crédito al
+  escribirse. Una entrada que no vuelve a escribirse (p. ej. el historial
+  de un crédito retirado) puede archivarse cuando vence su TTL. En
+  Soroban una entrada persistente archivada **no se borra**: se puede
+  restaurar (`stellar contract restore`), pero hasta entonces su lectura
+  falla. Queda pendiente antes de mainnet una función pública para
+  renovar el TTL de un crédito y de todo su historial.
 
 ### Por qué persistent storage para los créditos
 

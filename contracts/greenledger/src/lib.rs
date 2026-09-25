@@ -10,7 +10,9 @@
 //! personales (nombres, teléfonos, documentos de identidad, etc.).
 #![no_std]
 
-use soroban_sdk::{contract, contracterror, contractimpl, contracttype, Address, BytesN, Env, Symbol};
+use soroban_sdk::{
+    contract, contracterror, contractimpl, contracttype, Address, BytesN, Env, Symbol, Vec,
+};
 
 /// Cuántos ledgers equivalen aproximadamente a un día, asumiendo ~5s por
 /// ledger (valor típico en testnet/mainnet de Stellar). Se usa solo para
@@ -27,6 +29,11 @@ const CREDITO_TTL_EXTENSION: u32 = DIA_EN_LEDGERS * 365;
 /// verificadores autorizados y contadores globales).
 const INSTANCE_TTL_UMBRAL: u32 = DIA_EN_LEDGERS * 30;
 const INSTANCE_TTL_EXTENSION: u32 = DIA_EN_LEDGERS * 365;
+
+/// Máximo de movimientos que devuelve una sola llamada a
+/// `historial_credito`. Acota el costo de lectura; para historiales más
+/// largos se pagina con `desde`.
+pub const MAX_MOVIMIENTOS_POR_PAGINA: u32 = 50;
 
 /// Estado del ciclo de vida de un crédito de carbono.
 #[contracttype]
@@ -60,6 +67,35 @@ pub struct CreditoCarbono {
     pub beneficiario_retiro: Option<Symbol>,
 }
 
+/// Tipo de evento en el historial de propiedad de un crédito.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum TipoMovimiento {
+    Emision,
+    Transferencia,
+    Retiro,
+}
+
+/// Una entrada del historial de propiedad de un crédito. El historial es
+/// de solo escritura (append-only): cada emisión, transferencia o retiro
+/// agrega una entrada nueva y ninguna función del contrato modifica ni
+/// borra las anteriores.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Movimiento {
+    pub tipo: TipoMovimiento,
+    /// Dueño antes del movimiento. `None` en la emisión.
+    pub propietario_anterior: Option<Address>,
+    /// Dueño después del movimiento. En un retiro es quien lo retiró
+    /// (el crédito ya no cambia de dueño).
+    pub propietario: Address,
+    /// Solo en retiros: a nombre de quién se retiró el crédito.
+    pub beneficiario_retiro: Option<Symbol>,
+    /// Número de ledger en que ocurrió, para ubicarlo en un explorador.
+    pub ledger: u32,
+    pub timestamp: u64,
+}
+
 /// Claves de almacenamiento del contrato.
 #[contracttype]
 #[derive(Clone)]
@@ -70,6 +106,12 @@ pub enum DataKey {
     Verificador(Address),
     /// Un crédito individual, indexado por su id (persistent storage).
     Credito(Symbol),
+    /// Cuántos movimientos tiene el historial de un crédito (persistent).
+    NumMovimientos(Symbol),
+    /// Movimiento número `u32` (desde 0) del historial de un crédito
+    /// (persistent). Cada entrada vive en su propia clave para que el
+    /// historial no tenga un límite de tamaño por entrada de ledger.
+    Movimiento(Symbol, u32),
     /// Toneladas totales emitidas históricamente (instance storage).
     TotalEmitido,
     /// Toneladas totales retiradas históricamente (instance storage).
@@ -187,6 +229,15 @@ impl GreenLedgerContract {
             .persistent()
             .extend_ttl(&clave, CREDITO_TTL_UMBRAL, CREDITO_TTL_EXTENSION);
 
+        Self::registrar_movimiento(
+            &env,
+            &id,
+            TipoMovimiento::Emision,
+            None,
+            propietario.clone(),
+            None,
+        );
+
         let total_previo = Self::total_emitido(env.clone());
         env.storage()
             .instance()
@@ -245,6 +296,15 @@ impl GreenLedgerContract {
             .persistent()
             .extend_ttl(&clave, CREDITO_TTL_UMBRAL, CREDITO_TTL_EXTENSION);
 
+        Self::registrar_movimiento(
+            &env,
+            &id,
+            TipoMovimiento::Transferencia,
+            Some(propietario_anterior.clone()),
+            nuevo_propietario.clone(),
+            None,
+        );
+
         env.events().publish(
             (Symbol::new(&env, "transferido"), id),
             (propietario_anterior, nuevo_propietario),
@@ -284,6 +344,15 @@ impl GreenLedgerContract {
             .persistent()
             .extend_ttl(&clave, CREDITO_TTL_UMBRAL, CREDITO_TTL_EXTENSION);
 
+        Self::registrar_movimiento(
+            &env,
+            &id,
+            TipoMovimiento::Retiro,
+            Some(credito.propietario.clone()),
+            credito.propietario.clone(),
+            Some(beneficiario_retiro.clone()),
+        );
+
         let total_previo = Self::total_retirado(env.clone());
         env.storage().instance().set(
             &DataKey::TotalRetirado,
@@ -313,6 +382,51 @@ impl GreenLedgerContract {
         Ok(credito.hash_certificado == hash)
     }
 
+    /// Historial de propiedad de un crédito, en orden cronológico (el
+    /// primer movimiento siempre es la emisión). Lectura pública, sin
+    /// firma. Devuelve hasta `limite` movimientos a partir de la posición
+    /// `desde` (desde 0); `limite` se recorta a
+    /// `MAX_MOVIMIENTOS_POR_PAGINA`. Si `desde` pasa del final devuelve
+    /// una lista vacía.
+    pub fn historial_credito(
+        env: Env,
+        id: Symbol,
+        desde: u32,
+        limite: u32,
+    ) -> Result<Vec<Movimiento>, Error> {
+        let total = Self::total_movimientos(env.clone(), id.clone())?;
+        let limite = limite.min(MAX_MOVIMIENTOS_POR_PAGINA);
+        let hasta = desde.saturating_add(limite).min(total);
+
+        let mut movimientos = Vec::new(&env);
+        let mut indice = desde;
+        while indice < hasta {
+            let movimiento: Movimiento = env
+                .storage()
+                .persistent()
+                .get(&DataKey::Movimiento(id.clone(), indice))
+                .ok_or(Error::CreditoNoExiste)?;
+            movimientos.push_back(movimiento);
+            indice += 1;
+        }
+
+        Ok(movimientos)
+    }
+
+    /// Cuántos movimientos tiene el historial de un crédito (emisión +
+    /// transferencias + retiro, si lo hubo). Sirve para paginar
+    /// `historial_credito`.
+    pub fn total_movimientos(env: Env, id: Symbol) -> Result<u32, Error> {
+        if !env.storage().persistent().has(&DataKey::Credito(id.clone())) {
+            return Err(Error::CreditoNoExiste);
+        }
+        Ok(env
+            .storage()
+            .persistent()
+            .get(&DataKey::NumMovimientos(id))
+            .unwrap_or(0))
+    }
+
     /// Toneladas totales emitidas históricamente (acumulado, nunca baja).
     pub fn total_emitido(env: Env) -> u64 {
         env.storage()
@@ -337,6 +451,40 @@ impl GreenLedgerContract {
             .instance()
             .get(&DataKey::Admin)
             .ok_or(Error::NoAutorizado)
+    }
+
+    /// Agrega un movimiento al final del historial del crédito `id` y
+    /// extiende el TTL de la entrada nueva y del contador.
+    fn registrar_movimiento(
+        env: &Env,
+        id: &Symbol,
+        tipo: TipoMovimiento,
+        propietario_anterior: Option<Address>,
+        propietario: Address,
+        beneficiario_retiro: Option<Symbol>,
+    ) {
+        let clave_num = DataKey::NumMovimientos(id.clone());
+        let indice: u32 = env.storage().persistent().get(&clave_num).unwrap_or(0);
+
+        let movimiento = Movimiento {
+            tipo,
+            propietario_anterior,
+            propietario,
+            beneficiario_retiro,
+            ledger: env.ledger().sequence(),
+            timestamp: env.ledger().timestamp(),
+        };
+
+        let clave_mov = DataKey::Movimiento(id.clone(), indice);
+        env.storage().persistent().set(&clave_mov, &movimiento);
+        env.storage()
+            .persistent()
+            .extend_ttl(&clave_mov, CREDITO_TTL_UMBRAL, CREDITO_TTL_EXTENSION);
+
+        env.storage().persistent().set(&clave_num, &(indice + 1));
+        env.storage()
+            .persistent()
+            .extend_ttl(&clave_num, CREDITO_TTL_UMBRAL, CREDITO_TTL_EXTENSION);
     }
 
     /// Indica si `direccion` está autorizada como verificador.

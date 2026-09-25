@@ -14,7 +14,8 @@ Retirado (definitivo)**. El objetivo es impedir la **doble venta** y la
 | Versión | Contract ID (testnet)                                       | Estado |
 |---------|--------------------------------------------------------------|--------|
 | v1      | `CCRM3PZEMJMZLIM5B6SRMNILPDACR4KEHFS6ODBGHDPVOFNPK7B2XSWT`   | En producción de pruebas (no se modifica) |
-| v2      | [`CDQMOI5XRRMYABQZ6KWXAFMF27C4UBUW4P2I2VA4GCCWSY6A5RYWYU6Y`](https://stellar.expert/explorer/testnet/contract/CDQMOI5XRRMYABQZ6KWXAFMF27C4UBUW4P2I2VA4GCCWSY6A5RYWYU6Y) | Desplegado en testnet (25-sep-2026) |
+| v2      | [`CDYAQU4BG5WARTWX6CVILBDAWHU52YP4HHRRL2HICTC6725Y4ZNGGCQF`](https://stellar.expert/explorer/testnet/contract/CDYAQU4BG5WARTWX6CVILBDAWHU52YP4HHRRL2HICTC6725Y4ZNGGCQF) | **Vigente en testnet** — incluye historial de propiedad |
+| v2 (sin historial) | [`CDQMOI5XRRMYABQZ6KWXAFMF27C4UBUW4P2I2VA4GCCWSY6A5RYWYU6Y`](https://stellar.expert/explorer/testnet/contract/CDQMOI5XRRMYABQZ6KWXAFMF27C4UBUW4P2I2VA4GCCWSY6A5RYWYU6Y) | Primera instancia v2, reemplazada; se conserva como referencia |
 
 > El v2 vive en `contracts/greenledger/` y **no reemplaza ni redespliega
 > el v1**: son contratos independientes en testnet.
@@ -52,6 +53,8 @@ Definidas en `contracts/greenledger/src/lib.rs`:
 | `transferir_credito(id, nuevo_propietario)` | propietario actual | Cambia el dueño. Falla si el crédito está retirado o si el nuevo dueño es el mismo. |
 | `retirar_credito(id, beneficiario_retiro)` | propietario actual | Retira el crédito de forma **irreversible**. |
 | `verificar_certificado(id, hash)` | pública, sin firma | Compara un hash con el guardado en el crédito. |
+| `historial_credito(id, desde, limite)` | pública, sin firma | Historial de propiedad en orden cronológico (emisión, transferencias, retiro), paginado; máx. 50 por llamada. |
+| `total_movimientos(id)` | pública, sin firma | Cuántos movimientos tiene el historial (para paginar). |
 | `total_emitido()` / `total_retirado()` | pública, sin firma | Toneladas acumuladas históricas. |
 
 Errores (`contracts/greenledger/src/lib.rs`, `enum Error`):
@@ -99,29 +102,39 @@ El script compila, crea/reutiliza la identidad `greenledger-admin`
 (financiada con Friendbot), despliega el contrato, llama `initialize`,
 registra al admin como verificador, emite el crédito de ejemplo
 `CRED001` (100 t), lo transfiere a una segunda cuenta de prueba
-(`greenledger-comprador`) y finalmente lo retira a nombre de
-`EMPRESA_DEMO`.
+(`greenledger-comprador`), lo retira a nombre de `EMPRESA_DEMO` y, al
+final, imprime su historial de propiedad.
 
 ### Despliegue v2 en testnet (verificado)
 
 Ejecutado con `stellar-cli` 28.0.0 contra testnet (protocolo 28).
-WASM hash: `b28739bcd0cddd09180ae866ebfdf82f653e3c88f73e2dea2cc6954f16dbef61`
-(9.990 bytes optimizado).
+Contract ID: `CDYAQU4BG5WARTWX6CVILBDAWHU52YP4HHRRL2HICTC6725Y4ZNGGCQF`.
+WASM hash: `c10426eac025b2fe373664d7a9f5d8bb1ec5b67dfdbdb30321e204032b89eeea`
+(14.303 bytes optimizado).
 
 | Paso | Transacción |
 |---|---|
-| Subida del WASM | [`9d6a9478…`](https://stellar.expert/explorer/testnet/tx/9d6a94780788b490f573a057393a060e0a6aa2a311b60f8d28db789957115008) |
-| Despliegue del contrato | [`7e29c9e8…`](https://stellar.expert/explorer/testnet/tx/7e29c9e85ba69ab6692855224f7cbca9dc89dbecc5154bff89a015c5a24e9dd5) |
-| `initialize` | [`84401d95…`](https://stellar.expert/explorer/testnet/tx/84401d956134bbbc2be30ae886ee39ff7fd757c84c9fe530866fad821f1d6a1c) |
-| `agregar_verificador` | [`4e9eb101…`](https://stellar.expert/explorer/testnet/tx/4e9eb10111e056e39815c0ee4a83eb59122e999a0e243a5024e18349cd7d2ede) |
-| `emitir_credito` CRED001 (100 t) | [`607943ba…`](https://stellar.expert/explorer/testnet/tx/607943ba1dc450f3f8a9400fd2b0a29d263f80c0c632529c9626cf3788209218) |
-| `transferir_credito` → comprador | [`3e567a4b…`](https://stellar.expert/explorer/testnet/tx/3e567a4bc6734ed8852dc1146f7540815302148d92ae6d227d855ab0ead7d8e5) |
-| `retirar_credito` → `EMPRESA_DEMO` | [`80c079b3…`](https://stellar.expert/explorer/testnet/tx/80c079b3e0e05c5e8043b1f6ad2324f21306e2df170840119049baeada22f775) |
+| Subida del WASM | [`769aa85f…`](https://stellar.expert/explorer/testnet/tx/769aa85fd653aba067a6e7bc6b6c57b4c3214eed8083da714ff39713ac83f323) |
+| Despliegue del contrato | [`c93317ab…`](https://stellar.expert/explorer/testnet/tx/c93317abb2e6295781f398b1e10687e50f0cf2e3a91085309462ec4352b4d3b9) |
+| `initialize` | [`277c1f34…`](https://stellar.expert/explorer/testnet/tx/277c1f347354860c3abeeb447f0e8fc271ec476bf2a30ab849e69193c979ea69) |
+| `agregar_verificador` | [`ed5efc04…`](https://stellar.expert/explorer/testnet/tx/ed5efc0433550f32f750ac4d1efdd847fb153be4b51463c561e75cfd3277852c) |
+| `emitir_credito` CRED001 (100 t) | [`63c4ecdc…`](https://stellar.expert/explorer/testnet/tx/63c4ecdc938868253cb50cc0c664dbcf17d7a2091373feb3e75ab201f0cb603b) |
+| `transferir_credito` → comprador | [`d28b9dd8…`](https://stellar.expert/explorer/testnet/tx/d28b9dd8cac51a9bc485966056d9e10feb34f158d1fbe668c2d58ec2a1e831b5) |
+| `retirar_credito` → `EMPRESA_DEMO` | [`e2b239d7…`](https://stellar.expert/explorer/testnet/tx/e2b239d7fd9209664635c15e8cb00b2df14324ca26e3bd68ad11540c66307ce9) |
 
-Comprobaciones posteriores en cadena: `total_emitido = 100`,
-`total_retirado = 100`, `verificar_certificado(CRED001, hash) = true`, y
-un segundo `retirar_credito(CRED001)` es rechazado con
-`Error(Contract, #5)` = `CreditoRetirado` (sin doble conteo).
+`historial_credito(CRED001, 0, 50)` devuelve en cadena:
+
+| # | Tipo | Anterior → Nuevo dueño | Ledger |
+|---|---|---|---|
+| 0 | `Emision` | — → admin (`GDUU…D7PZ`) | 4865317 |
+| 1 | `Transferencia` | admin → comprador (`GC4H…LTWM`) | 4865318 |
+| 2 | `Retiro` | comprador, a nombre de `EMPRESA_DEMO` | 4865319 |
+
+Otras comprobaciones en cadena: `total_movimientos = 3`,
+`verificar_certificado(CRED001, hash) = true`, un segundo
+`retirar_credito(CRED001)` se rechaza con `Error(Contract, #5)` =
+`CreditoRetirado` sin agregar movimientos al historial, y el historial
+de un id inexistente devuelve `Error(Contract, #4)` = `CreditoNoExiste`.
 
 Cuentas de prueba (solo testnet): admin/verificador
 `GDUUFHKPZJDBLPEJJWMTFVGVGDXCHE3HLB7OPHJLQQ562IV6TE66D7PZ`, comprador
@@ -129,14 +142,6 @@ Cuentas de prueba (solo testnet): admin/verificador
 
 > Correr el script de nuevo despliega **otra** instancia con un Contract
 > ID distinto; la de arriba es la instancia de referencia del v2.
-
-## Estructura del repositorio
-
-```
-contracts/greenledger/   Contrato v2 (Cargo.toml, src/lib.rs, src/test.rs)
-scripts/                 Scripts de despliegue a testnet (.sh y .ps1)
-docs/ARQUITECTURA.md     Ciclo de vida, roles, modelo de datos y decisiones de diseño
-```
 
 ## Pendientes antes de mainnet
 
@@ -150,7 +155,10 @@ paso hace falta:
   multifirma y/o una función para transferir el rol de admin, así una
   llave perdida o comprometida no deja bloqueada la gobernanza de los
   verificadores.
-- Revisar los TTL (`CREDITO_TTL_*`, `INSTANCE_TTL_*`) según el uso real.
+- Revisar los TTL (`CREDITO_TTL_*`, `INSTANCE_TTL_*`) según el uso real y
+  agregar una función pública para renovar el TTL de un crédito y de
+  todo su historial (ver `docs/ARQUITECTURA.md`, "Historial de
+  propiedad").
 
 ## Seguridad
 
