@@ -93,6 +93,9 @@ stellar contract build
 
 ## Desplegar en testnet
 
+> Para presentar el contrato en vivo (paso a paso, con la salida esperada
+> de cada comando) usa el guion [`DEMO.md`](DEMO.md).
+
 ```bash
 ./scripts/deploy_testnet.sh
 ```
@@ -162,6 +165,16 @@ Cuentas de prueba (solo testnet): admin/verificador
 
 > Correr el script de nuevo despliega **otra** instancia con un Contract
 > ID distinto; la de arriba es la instancia de referencia del v2.
+
+## Estructura del repositorio
+
+```
+contracts/greenledger/   Contrato v2 (Cargo.toml, src/lib.rs, src/test.rs)
+scripts/                 Scripts de despliegue a testnet (.sh y .ps1)
+docs/ARQUITECTURA.md     Ciclo de vida, roles, modelo de datos y decisiones de diseño
+DEMO.md                  Guion de demo en vivo con comandos y salidas esperadas
+demo/                    Certificado ficticio y lote de ejemplo usados por DEMO.md
+```
 
 ## Pendientes antes de mainnet
 
