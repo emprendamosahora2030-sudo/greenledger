@@ -15,7 +15,8 @@
 #   7. Transfiere ese crédito a "greenledger-comprador".
 #   8. Retira el crédito a nombre de "EMPRESA_DEMO".
 #
-# Requisitos: stellar-cli (`stellar`) instalado y en el PATH, y acceso de
+# Requisitos: stellar-cli (`stellar`) v23 o superior (probado con v28.0.0)
+# instalado y en el PATH, y acceso de
 # red a horizon-testnet.stellar.org / friendbot.stellar.org / soroban RPC
 # de testnet.
 #
@@ -44,27 +45,21 @@ explorer_account() { echo "https://stellar.expert/explorer/testnet/account/$1"; 
 
 echo "== 1/8 Compilando contrato a WASM optimizado =="
 cd "$CONTRACT_DIR"
-stellar contract build
-
-# La carpeta de destino (wasm32v1-none, wasm32-unknown-unknown, etc.)
-# depende de la versión de stellar-cli, así que se busca el .wasm en vez
-# de asumir una ruta fija. El crate no pertenece a un workspace, así que
-# cargo deja el target/ dentro de contracts/greenledger/, no en la raíz.
-WASM_PATH="$(find "$CONTRACT_DIR/target" -type f -name "greenledger.wasm" -path "*/release/*" ! -name "*.optimized.wasm" | head -n1)"
-if [ -z "$WASM_PATH" ]; then
-  echo "No se encontró greenledger.wasm bajo $CONTRACT_DIR/target. ¿Falló la compilación?" >&2
+# --out-dir deja el .wasm final en una ruta fija, sin depender de la
+# carpeta de destino de cargo (wasm32v1-none, wasm32-unknown-unknown...).
+# Desde stellar-cli v23 `build` ya optimiza el WASM por defecto.
+OUT_DIR="$CONTRACT_DIR/target/deploy"
+stellar contract build --out-dir "$OUT_DIR"
+WASM_PATH="$OUT_DIR/greenledger.wasm"
+if [ ! -f "$WASM_PATH" ]; then
+  echo "No se encontró $WASM_PATH. ¿Falló la compilación?" >&2
   exit 1
-fi
-stellar contract optimize --wasm "$WASM_PATH" || true
-WASM_OPTIMIZADO="${WASM_PATH%.wasm}.optimized.wasm"
-if [ -f "$WASM_OPTIMIZADO" ]; then
-  WASM_PATH="$WASM_OPTIMIZADO"
 fi
 echo "WASM: $WASM_PATH"
 
 echo "== 2/8 Identidad admin (${ADMIN_ID}) =="
 if ! stellar keys address "$ADMIN_ID" >/dev/null 2>&1; then
-  stellar keys generate --global "$ADMIN_ID" --network "$RED" --fund
+  stellar keys generate "$ADMIN_ID" --network "$RED" --fund
 else
   echo "La identidad '$ADMIN_ID' ya existe, se reutiliza."
 fi
@@ -73,7 +68,7 @@ echo "Admin: $ADMIN_ADDR ($(explorer_account "$ADMIN_ADDR"))"
 
 echo "== 3/8 Identidad comprador de prueba (${COMPRADOR_ID}) =="
 if ! stellar keys address "$COMPRADOR_ID" >/dev/null 2>&1; then
-  stellar keys generate --global "$COMPRADOR_ID" --network "$RED" --fund
+  stellar keys generate "$COMPRADOR_ID" --network "$RED" --fund
 else
   echo "La identidad '$COMPRADOR_ID' ya existe, se reutiliza."
 fi

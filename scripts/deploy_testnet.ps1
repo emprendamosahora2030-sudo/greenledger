@@ -43,34 +43,20 @@ function Get-ExplorerContract($id) { "https://stellar.expert/explorer/testnet/co
 function Get-ExplorerAccount($addr) { "https://stellar.expert/explorer/testnet/account/$addr" }
 
 Write-Host "== 1/8 Compilando contrato a WASM optimizado =="
+# --out-dir deja el .wasm final en una ruta fija, sin depender de la
+# carpeta de destino de cargo (wasm32v1-none, wasm32-unknown-unknown...).
+# Desde stellar-cli v23 `build` ya optimiza el WASM por defecto.
+$OutDir = Join-Path $ContractDir "target/deploy"
 Push-Location $ContractDir
 try {
-    stellar contract build
+    stellar contract build --out-dir $OutDir
 }
 finally {
     Pop-Location
 }
-
-# La carpeta de destino (wasm32v1-none, wasm32-unknown-unknown, etc.)
-# depende de la versión de stellar-cli, así que se busca el .wasm en vez
-# de asumir una ruta fija. El crate no pertenece a un workspace, así que
-# cargo deja el target/ dentro de contracts/greenledger/, no en la raíz.
-$TargetDir = Join-Path $ContractDir "target"
-$WasmFile = Get-ChildItem -Path $TargetDir -Recurse -Filter "greenledger.wasm" -ErrorAction SilentlyContinue |
-    Where-Object { $_.FullName -match "[\\/]release[\\/]" -and $_.Name -notmatch "\.optimized\.wasm$" } |
-    Select-Object -First 1
-if (-not $WasmFile) {
-    throw "No se encontró greenledger.wasm bajo $TargetDir. ¿Falló la compilación?"
-}
-$WasmPath = $WasmFile.FullName
-
-try {
-    stellar contract optimize --wasm $WasmPath
-    $WasmOptimizado = [System.IO.Path]::ChangeExtension($WasmPath, $null).TrimEnd('.') + ".optimized.wasm"
-    if (Test-Path $WasmOptimizado) { $WasmPath = $WasmOptimizado }
-}
-catch {
-    Write-Host "optimize opcional falló, se continúa con el wasm sin optimizar"
+$WasmPath = Join-Path $OutDir "greenledger.wasm"
+if (-not (Test-Path $WasmPath)) {
+    throw "No se encontró $WasmPath. ¿Falló la compilación?"
 }
 Write-Host "WASM: $WasmPath"
 
@@ -78,7 +64,7 @@ Write-Host "== 2/8 Identidad admin ($AdminId) =="
 $adminExiste = $true
 try { stellar keys address $AdminId | Out-Null } catch { $adminExiste = $false }
 if (-not $adminExiste) {
-    stellar keys generate --global $AdminId --network $Red --fund
+    stellar keys generate $AdminId --network $Red --fund
 }
 else {
     Write-Host "La identidad '$AdminId' ya existe, se reutiliza."
@@ -90,7 +76,7 @@ Write-Host "== 3/8 Identidad comprador de prueba ($CompradorId) =="
 $compradorExiste = $true
 try { stellar keys address $CompradorId | Out-Null } catch { $compradorExiste = $false }
 if (-not $compradorExiste) {
-    stellar keys generate --global $CompradorId --network $Red --fund
+    stellar keys generate $CompradorId --network $Red --fund
 }
 else {
     Write-Host "La identidad '$CompradorId' ya existe, se reutiliza."

@@ -14,7 +14,7 @@ Retirado (definitivo)**. El objetivo es impedir la **doble venta** y la
 | Versión | Contract ID (testnet)                                       | Estado |
 |---------|--------------------------------------------------------------|--------|
 | v1      | `CCRM3PZEMJMZLIM5B6SRMNILPDACR4KEHFS6ODBGHDPVOFNPK7B2XSWT`   | En producción de pruebas (no se modifica) |
-| v2      | _Pendiente — ver "Desplegar en testnet" más abajo_            | Código listo, despliegue por ejecutar |
+| v2      | [`CDQMOI5XRRMYABQZ6KWXAFMF27C4UBUW4P2I2VA4GCCWSY6A5RYWYU6Y`](https://stellar.expert/explorer/testnet/contract/CDQMOI5XRRMYABQZ6KWXAFMF27C4UBUW4P2I2VA4GCCWSY6A5RYWYU6Y) | Desplegado en testnet (25-sep-2026) |
 
 > El v2 vive en `contracts/greenledger/` y **no reemplaza ni redespliega
 > el v1**: son contratos independientes en testnet.
@@ -64,7 +64,14 @@ trazabilidad): topics `("emitido", id)`, `("transferido", id)` y
 
 ## Compilar y testear
 
-Requiere Rust estable + `stellar-cli` ([instrucciones oficiales](https://developers.stellar.org/docs/tools/developer-tools)).
+Requiere Rust estable, el target `wasm32v1-none`
+(`rustup target add wasm32v1-none`) y `stellar-cli` v23 o superior
+([instrucciones oficiales](https://developers.stellar.org/docs/tools/developer-tools)).
+Si se compila `stellar-cli` desde crates.io en Linux, antes hay que
+instalar `libdbus-1-dev`, `libudev-dev` y `pkg-config`.
+
+`Cargo.lock` está versionado a propósito: fija `ed25519-dalek` 2.x, ya
+que con la 3.x los testutils de `soroban-sdk` 22 no compilan.
 
 ```bash
 cd contracts/greenledger
@@ -95,14 +102,33 @@ registra al admin como verificador, emite el crédito de ejemplo
 (`greenledger-comprador`) y finalmente lo retira a nombre de
 `EMPRESA_DEMO`.
 
-> **Nota de esta entrega:** el entorno donde se generó este código tiene
-> el acceso de red restringido por política (no llega a
-> `horizon-testnet.stellar.org`, `friendbot.stellar.org` ni a
-> `index.crates.io`), así que ni `cargo test` ni el despliegue se
-> pudieron ejecutar aquí. El código y los scripts están listos para
-> correr tal cual en un entorno con esos hosts habilitados; el Contract
-> ID definitivo se debe completar en la tabla de arriba después de esa
-> ejecución.
+### Despliegue v2 en testnet (verificado)
+
+Ejecutado con `stellar-cli` 28.0.0 contra testnet (protocolo 28).
+WASM hash: `b28739bcd0cddd09180ae866ebfdf82f653e3c88f73e2dea2cc6954f16dbef61`
+(9.990 bytes optimizado).
+
+| Paso | Transacción |
+|---|---|
+| Subida del WASM | [`9d6a9478…`](https://stellar.expert/explorer/testnet/tx/9d6a94780788b490f573a057393a060e0a6aa2a311b60f8d28db789957115008) |
+| Despliegue del contrato | [`7e29c9e8…`](https://stellar.expert/explorer/testnet/tx/7e29c9e85ba69ab6692855224f7cbca9dc89dbecc5154bff89a015c5a24e9dd5) |
+| `initialize` | [`84401d95…`](https://stellar.expert/explorer/testnet/tx/84401d956134bbbc2be30ae886ee39ff7fd757c84c9fe530866fad821f1d6a1c) |
+| `agregar_verificador` | [`4e9eb101…`](https://stellar.expert/explorer/testnet/tx/4e9eb10111e056e39815c0ee4a83eb59122e999a0e243a5024e18349cd7d2ede) |
+| `emitir_credito` CRED001 (100 t) | [`607943ba…`](https://stellar.expert/explorer/testnet/tx/607943ba1dc450f3f8a9400fd2b0a29d263f80c0c632529c9626cf3788209218) |
+| `transferir_credito` → comprador | [`3e567a4b…`](https://stellar.expert/explorer/testnet/tx/3e567a4bc6734ed8852dc1146f7540815302148d92ae6d227d855ab0ead7d8e5) |
+| `retirar_credito` → `EMPRESA_DEMO` | [`80c079b3…`](https://stellar.expert/explorer/testnet/tx/80c079b3e0e05c5e8043b1f6ad2324f21306e2df170840119049baeada22f775) |
+
+Comprobaciones posteriores en cadena: `total_emitido = 100`,
+`total_retirado = 100`, `verificar_certificado(CRED001, hash) = true`, y
+un segundo `retirar_credito(CRED001)` es rechazado con
+`Error(Contract, #5)` = `CreditoRetirado` (sin doble conteo).
+
+Cuentas de prueba (solo testnet): admin/verificador
+`GDUUFHKPZJDBLPEJJWMTFVGVGDXCHE3HLB7OPHJLQQ562IV6TE66D7PZ`, comprador
+`GC4H6NDQHNTFQFCT3DLBSCORVMILYNSEI6Y7CUBYIG673B25L5AJLTWM`.
+
+> Correr el script de nuevo despliega **otra** instancia con un Contract
+> ID distinto; la de arriba es la instancia de referencia del v2.
 
 ## Estructura del repositorio
 
