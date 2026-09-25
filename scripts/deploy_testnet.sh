@@ -15,6 +15,8 @@
 #   7. Transfiere ese crédito a "greenledger-comprador".
 #   8. Retira el crédito a nombre de "EMPRESA_DEMO".
 #   9. Consulta el historial de propiedad del crédito (lectura, sin firma).
+#  10. Emite un lote atómico de 3 créditos (LOTE001..LOTE003) de un mismo
+#      proyecto y certificado.
 #
 # Requisitos: stellar-cli (`stellar`) v23 o superior (probado con v28.0.0)
 # instalado y en el PATH, y acceso de
@@ -36,6 +38,8 @@ CREDITO_ID="CRED001"
 TONELADAS="100"
 PROYECTO="PROY001"
 BENEFICIARIO_RETIRO="EMPRESA_DEMO"
+PROYECTO_LOTE="PROY002"
+LOTE_JSON='[{"id":"LOTE001","toneladas":10},{"id":"LOTE002","toneladas":20},{"id":"LOTE003","toneladas":30}]'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -146,6 +150,21 @@ stellar contract invoke \
   --id "$CREDITO_ID" \
   --desde 0 \
   --limite 50
+
+echo "== 10 emitir_lote(${PROYECTO_LOTE}: LOTE001..LOTE003) =="
+# Todos los créditos del lote comparten proyecto y certificado; si uno
+# falla, no se emite ninguno.
+HASH_LOTE="$(printf '%s' "certificado-demo-${PROYECTO_LOTE}" | sha256sum | cut -d' ' -f1)"
+stellar contract invoke \
+  --id "$CONTRACT_ID" \
+  --source "$ADMIN_ID" \
+  --network "$RED" \
+  -- emitir_lote \
+  --verificador "$ADMIN_ADDR" \
+  --propietario "$ADMIN_ADDR" \
+  --hash_certificado "$HASH_LOTE" \
+  --proyecto "$PROYECTO_LOTE" \
+  --creditos "$LOTE_JSON"
 
 echo ""
 echo "============================================================"

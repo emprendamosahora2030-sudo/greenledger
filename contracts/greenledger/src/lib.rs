@@ -35,6 +35,12 @@ const INSTANCE_TTL_EXTENSION: u32 = DIA_EN_LEDGERS * 365;
 /// largos se pagina con `desde`.
 pub const MAX_MOVIMIENTOS_POR_PAGINA: u32 = 50;
 
+/// Máximo de créditos por llamada a `emitir_lote`. Cada crédito escribe
+/// 3 entradas de ledger (crédito, movimiento y contador de movimientos);
+/// 25 créditos quedan muy por debajo de los límites por transacción de
+/// testnet (protocolo 28: 200 escrituras, 400 entradas de footprint).
+pub const MAX_CREDITOS_POR_LOTE: u32 = 25;
+
 /// Estado del ciclo de vida de un crédito de carbono.
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -65,6 +71,15 @@ pub struct CreditoCarbono {
     /// A nombre de quién se retira el crédito (p. ej. código o nombre de
     /// la empresa compradora). Nunca el nombre de una persona natural.
     pub beneficiario_retiro: Option<Symbol>,
+}
+
+/// Un crédito dentro de un lote de `emitir_lote`: solo varían el id y
+/// las toneladas; el resto lo comparte todo el lote.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CreditoLote {
+    pub id: Symbol,
+    pub toneladas: u32,
 }
 
 /// Tipo de evento en el historial de propiedad de un crédito.
@@ -131,6 +146,8 @@ pub enum Error {
     CreditoRetirado = 5,
     ToneladasInvalidas = 6,
     MismoPropietario = 7,
+    LoteVacio = 8,
+    LoteDemasiadoGrande = 9,
 }
 
 #[contract]
@@ -198,60 +215,70 @@ impl GreenLedgerContract {
         proyecto: Symbol,
     ) -> Result<CreditoCarbono, Error> {
         verificador.require_auth();
+        Self::exigir_verificador(&env, &verificador)?;
 
-        if !Self::es_verificador(&env, &verificador) {
-            return Err(Error::NoAutorizado);
-        }
-        if toneladas == 0 {
-            return Err(Error::ToneladasInvalidas);
-        }
-
-        let clave = DataKey::Credito(id.clone());
-        if env.storage().persistent().has(&clave) {
-            return Err(Error::CreditoYaExiste);
-        }
-
-        let credito = CreditoCarbono {
-            id: id.clone(),
-            propietario: propietario.clone(),
-            toneladas,
-            estado: EstadoCredito::Emitido,
-            verificador: verificador.clone(),
-            hash_certificado,
-            proyecto: proyecto.clone(),
-            emitido_en: env.ledger().timestamp(),
-            retirado_en: None,
-            beneficiario_retiro: None,
-        };
-
-        env.storage().persistent().set(&clave, &credito);
-        env.storage()
-            .persistent()
-            .extend_ttl(&clave, CREDITO_TTL_UMBRAL, CREDITO_TTL_EXTENSION);
-
-        Self::registrar_movimiento(
+        let credito = Self::crear_credito(
             &env,
-            &id,
-            TipoMovimiento::Emision,
-            None,
-            propietario.clone(),
-            None,
-        );
-
-        let total_previo = Self::total_emitido(env.clone());
-        env.storage()
-            .instance()
-            .set(&DataKey::TotalEmitido, &(total_previo + toneladas as u64));
-        env.storage()
-            .instance()
-            .extend_ttl(INSTANCE_TTL_UMBRAL, INSTANCE_TTL_EXTENSION);
-
-        env.events().publish(
-            (Symbol::new(&env, "emitido"), id),
-            (propietario, toneladas, proyecto),
-        );
+            &verificador,
+            id,
+            &propietario,
+            toneladas,
+            &hash_certificado,
+            &proyecto,
+        )?;
+        Self::sumar_total(&env, DataKey::TotalEmitido, toneladas as u64);
 
         Ok(credito)
+    }
+
+    /// Emite un lote de créditos respaldados por una misma verificación:
+    /// todos comparten verificador, propietario inicial, proyecto y hash
+    /// del certificado; cada uno trae su propio `id` y `toneladas`.
+    ///
+    /// Es atómico (todo o nada): si cualquier crédito del lote falla (id
+    /// repetido, ya existente o toneladas en cero) la función devuelve el
+    /// error y Soroban revierte la transacción completa, sin emitir
+    /// ninguno. Acepta entre 1 y `MAX_CREDITOS_POR_LOTE` créditos.
+    /// Devuelve las toneladas totales emitidas en el lote.
+    pub fn emitir_lote(
+        env: Env,
+        verificador: Address,
+        propietario: Address,
+        hash_certificado: BytesN<32>,
+        proyecto: Symbol,
+        creditos: Vec<CreditoLote>,
+    ) -> Result<u64, Error> {
+        verificador.require_auth();
+        Self::exigir_verificador(&env, &verificador)?;
+
+        if creditos.is_empty() {
+            return Err(Error::LoteVacio);
+        }
+        if creditos.len() > MAX_CREDITOS_POR_LOTE {
+            return Err(Error::LoteDemasiadoGrande);
+        }
+
+        let mut total_lote: u64 = 0;
+        for credito in creditos.iter() {
+            Self::crear_credito(
+                &env,
+                &verificador,
+                credito.id,
+                &propietario,
+                credito.toneladas,
+                &hash_certificado,
+                &proyecto,
+            )?;
+            total_lote += credito.toneladas as u64;
+        }
+        Self::sumar_total(&env, DataKey::TotalEmitido, total_lote);
+
+        env.events().publish(
+            (Symbol::new(&env, "lote_emitido"), proyecto),
+            (verificador, propietario, creditos.len(), total_lote),
+        );
+
+        Ok(total_lote)
     }
 
     /// Lectura pública del estado completo de un crédito. No requiere
@@ -353,14 +380,7 @@ impl GreenLedgerContract {
             Some(beneficiario_retiro.clone()),
         );
 
-        let total_previo = Self::total_retirado(env.clone());
-        env.storage().instance().set(
-            &DataKey::TotalRetirado,
-            &(total_previo + credito.toneladas as u64),
-        );
-        env.storage()
-            .instance()
-            .extend_ttl(INSTANCE_TTL_UMBRAL, INSTANCE_TTL_EXTENSION);
+        Self::sumar_total(&env, DataKey::TotalRetirado, credito.toneladas as u64);
 
         env.events().publish(
             (Symbol::new(&env, "retirado"), id),
@@ -485,6 +505,82 @@ impl GreenLedgerContract {
         env.storage()
             .persistent()
             .extend_ttl(&clave_num, CREDITO_TTL_UMBRAL, CREDITO_TTL_EXTENSION);
+    }
+
+    /// Crea un crédito nuevo con su primer movimiento (la emisión) y
+    /// publica el evento `emitido`. No revisa firmas ni rol: eso lo hacen
+    /// `emitir_credito` y `emitir_lote` antes de llamarla. Tampoco toca
+    /// `TotalEmitido`, que el llamador actualiza una sola vez.
+    fn crear_credito(
+        env: &Env,
+        verificador: &Address,
+        id: Symbol,
+        propietario: &Address,
+        toneladas: u32,
+        hash_certificado: &BytesN<32>,
+        proyecto: &Symbol,
+    ) -> Result<CreditoCarbono, Error> {
+        if toneladas == 0 {
+            return Err(Error::ToneladasInvalidas);
+        }
+
+        let clave = DataKey::Credito(id.clone());
+        if env.storage().persistent().has(&clave) {
+            return Err(Error::CreditoYaExiste);
+        }
+
+        let credito = CreditoCarbono {
+            id: id.clone(),
+            propietario: propietario.clone(),
+            toneladas,
+            estado: EstadoCredito::Emitido,
+            verificador: verificador.clone(),
+            hash_certificado: hash_certificado.clone(),
+            proyecto: proyecto.clone(),
+            emitido_en: env.ledger().timestamp(),
+            retirado_en: None,
+            beneficiario_retiro: None,
+        };
+
+        env.storage().persistent().set(&clave, &credito);
+        env.storage()
+            .persistent()
+            .extend_ttl(&clave, CREDITO_TTL_UMBRAL, CREDITO_TTL_EXTENSION);
+
+        Self::registrar_movimiento(
+            env,
+            &id,
+            TipoMovimiento::Emision,
+            None,
+            propietario.clone(),
+            None,
+        );
+
+        env.events().publish(
+            (Symbol::new(env, "emitido"), id),
+            (propietario.clone(), toneladas, proyecto.clone()),
+        );
+
+        Ok(credito)
+    }
+
+    /// Suma `toneladas` al contador global `clave` (TotalEmitido o
+    /// TotalRetirado) y renueva el TTL del instance storage.
+    fn sumar_total(env: &Env, clave: DataKey, toneladas: u64) {
+        let previo: u64 = env.storage().instance().get(&clave).unwrap_or(0);
+        env.storage().instance().set(&clave, &(previo + toneladas));
+        env.storage()
+            .instance()
+            .extend_ttl(INSTANCE_TTL_UMBRAL, INSTANCE_TTL_EXTENSION);
+    }
+
+    /// Falla con `NoAutorizado` si `direccion` no es verificador.
+    fn exigir_verificador(env: &Env, direccion: &Address) -> Result<(), Error> {
+        if Self::es_verificador(env, direccion) {
+            Ok(())
+        } else {
+            Err(Error::NoAutorizado)
+        }
     }
 
     /// Indica si `direccion` está autorizada como verificador.

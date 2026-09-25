@@ -144,6 +144,35 @@ struct Movimiento {
   falla. Queda pendiente antes de mainnet una función pública para
   renovar el TTL de un crédito y de todo su historial.
 
+## Emisión por lotes
+
+`emitir_lote` existe porque una verificación certificada normalmente
+respalda muchas toneladas que se venden por separado. Reglas:
+
+- **Una emisión = una verificación.** Todo el lote comparte
+  verificador, propietario inicial, `proyecto` y `hash_certificado`;
+  cada crédito solo varía en `id` y `toneladas` (`CreditoLote`). Para
+  mezclar certificados distintos se usan lotes separados.
+- **Atómico, todo o nada.** Cada crédito pasa por la misma validación
+  que `emitir_credito` (toneladas > 0, id no existente, incluido un id
+  repetido dentro del mismo lote). Al primer error la función devuelve
+  `Err` y Soroban revierte la transacción completa: no queda ningún
+  crédito, movimiento ni cambio en `TotalEmitido`.
+- **Tamaño: de 1 a 25** (`MAX_CREDITOS_POR_LOTE`). Un lote vacío falla
+  con `LoteVacio` y uno de 26 o más con `LoteDemasiadoGrande`, antes de
+  escribir nada. 25 se midió en testnet y usa el 38 % del límite de
+  escrituras por transacción (el recurso más ajustado); el tope deja
+  margen si la red cambia sus límites.
+- **Mismo resultado que emitir uno por uno.** Cada crédito queda igual
+  que si se hubiera emitido con `emitir_credito`: su propio registro, su
+  historial con la entrada `Emision` y su evento `emitido`. El lote suma
+  un evento `lote_emitido` con verificador, propietario, cantidad de
+  créditos y toneladas totales.
+
+La lógica compartida vive en `crear_credito` (validación, escritura,
+historial y evento), y `emitir_credito` / `emitir_lote` solo agregan la
+firma, el rol de verificador y el contador global.
+
 ### Por qué persistent storage para los créditos
 
 Los créditos son el registro que debe sobrevivir mientras exista el

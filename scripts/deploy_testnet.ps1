@@ -16,6 +16,8 @@
     7. Transfiere ese crédito a "greenledger-comprador".
     8. Retira el crédito a nombre de "EMPRESA_DEMO".
     9. Consulta el historial de propiedad del crédito (lectura, sin firma).
+   10. Emite un lote atómico de 3 créditos (LOTE001..LOTE003) de un mismo
+       proyecto y certificado.
 
 .NOTES
     Requiere stellar-cli (`stellar`) instalado y en el PATH, y acceso de
@@ -35,6 +37,8 @@ $CreditoId = "CRED001"
 $Toneladas = "100"
 $Proyecto = "PROY001"
 $BeneficiarioRetiro = "EMPRESA_DEMO"
+$ProyectoLote = "PROY002"
+$LoteJson = '[{"id":"LOTE001","toneladas":10},{"id":"LOTE002","toneladas":20},{"id":"LOTE003","toneladas":30}]'
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Split-Path -Parent $ScriptDir
@@ -133,6 +137,25 @@ stellar contract invoke --id $ContractId --source $AdminId --network $Red --send
     --id $CreditoId `
     --desde 0 `
     --limite 50
+
+Write-Host "== 10 emitir_lote($ProyectoLote`: LOTE001..LOTE003) =="
+# Todos los créditos del lote comparten proyecto y certificado; si uno
+# falla, no se emite ninguno. El JSON se pasa por archivo porque Windows
+# PowerShell 5.1 quita las comillas dobles de los argumentos nativos.
+$HashLote = -join ($Sha256.ComputeHash([System.Text.Encoding]::UTF8.GetBytes("certificado-demo-$ProyectoLote")) | ForEach-Object { $_.ToString("x2") })
+$LoteArchivo = New-TemporaryFile
+try {
+    Set-Content -Path $LoteArchivo -Value $LoteJson -NoNewline -Encoding ascii
+    stellar contract invoke --id $ContractId --source $AdminId --network $Red -- emitir_lote `
+        --verificador $AdminAddr `
+        --propietario $AdminAddr `
+        --hash_certificado $HashLote `
+        --proyecto $ProyectoLote `
+        --creditos-file-path $LoteArchivo
+}
+finally {
+    Remove-Item $LoteArchivo -ErrorAction SilentlyContinue
+}
 
 Write-Host ""
 Write-Host "============================================================"

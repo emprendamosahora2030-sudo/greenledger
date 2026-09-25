@@ -527,3 +527,194 @@ fn historial_de_credito_inexistente_falla() {
         Err(Ok(Error::CreditoNoExiste))
     );
 }
+
+// --- Emisión por lotes ---------------------------------------------------
+
+/// Arma un lote con los ids y toneladas dados.
+fn lote(env: &Env, creditos: &[(&str, u32)]) -> Vec<CreditoLote> {
+    let mut lote = Vec::new(env);
+    for (id, toneladas) in creditos {
+        lote.push_back(CreditoLote {
+            id: Symbol::new(env, id),
+            toneladas: *toneladas,
+        });
+    }
+    lote
+}
+
+/// Lote de `n` créditos de 1 t con ids LOTE0, LOTE1, ...
+fn lote_de_tamano(env: &Env, n: u32) -> Vec<CreditoLote> {
+    let mut lote = Vec::new(env);
+    for i in 0..n {
+        let id = std::format!("LOTE{i}");
+        lote.push_back(CreditoLote {
+            id: Symbol::new(env, &id),
+            toneladas: 1,
+        });
+    }
+    lote
+}
+
+#[test]
+fn lote_emite_todos_los_creditos_con_datos_compartidos() {
+    let ctx = setup();
+    let propietario = Address::generate(&ctx.env);
+    let hash = crear_hash(&ctx.env, 9);
+    let proyecto = Symbol::new(&ctx.env, "PROY_LOTE");
+    let creditos = lote(&ctx.env, &[("L001", 10), ("L002", 20), ("L003", 30)]);
+
+    let total = ctx
+        .client
+        .emitir_lote(&ctx.verificador, &propietario, &hash, &proyecto, &creditos);
+
+    assert_eq!(total, 60);
+    assert_eq!(ctx.client.total_emitido(), 60);
+    for item in creditos.iter() {
+        let credito = ctx.client.verificar_credito(&item.id);
+        assert_eq!(credito.toneladas, item.toneladas);
+        assert_eq!(credito.propietario, propietario);
+        assert_eq!(credito.verificador, ctx.verificador);
+        assert_eq!(credito.hash_certificado, hash);
+        assert_eq!(credito.proyecto, proyecto);
+        assert_eq!(credito.estado, EstadoCredito::Emitido);
+
+        // Cada crédito arranca su propio historial con la emisión.
+        let historial = ctx.client.historial_credito(&item.id, &0, &10);
+        assert_eq!(historial.len(), 1);
+        assert_eq!(historial.get_unchecked(0).tipo, TipoMovimiento::Emision);
+        assert_eq!(historial.get_unchecked(0).propietario, propietario);
+    }
+}
+
+#[test]
+fn lote_exige_la_firma_del_verificador() {
+    let ctx = setup();
+    let propietario = Address::generate(&ctx.env);
+    let hash = crear_hash(&ctx.env, 9);
+    let proyecto = Symbol::new(&ctx.env, "PROY_LOTE");
+    let creditos = lote(&ctx.env, &[("L001", 10)]);
+
+    ctx.client
+        .emitir_lote(&ctx.verificador, &propietario, &hash, &proyecto, &creditos);
+
+    // La única firma exigida es la del verificador, para esta llamada.
+    let firmas = ctx.env.auths();
+    assert_eq!(firmas.len(), 1);
+    let (firmante, invocacion) = &firmas[0];
+    assert_eq!(firmante, &ctx.verificador);
+    match &invocacion.function {
+        soroban_sdk::testutils::AuthorizedFunction::Contract((_, nombre, _)) => {
+            assert_eq!(nombre, &Symbol::new(&ctx.env, "emitir_lote"));
+        }
+        _ => panic!("se esperaba la firma de una llamada al contrato"),
+    }
+}
+
+#[test]
+fn lote_de_no_verificador_falla() {
+    let ctx = setup();
+    let intruso = Address::generate(&ctx.env);
+    let hash = crear_hash(&ctx.env, 9);
+    let proyecto = Symbol::new(&ctx.env, "PROY_LOTE");
+    let creditos = lote(&ctx.env, &[("L001", 10)]);
+
+    let resultado =
+        ctx.client
+            .try_emitir_lote(&intruso, &intruso, &hash, &proyecto, &creditos);
+    assert_eq!(resultado, Err(Ok(Error::NoAutorizado)));
+}
+
+/// Comprueba que un lote que falla con `error` no dejó rastro: ningún
+/// crédito del lote existe y `TotalEmitido` no cambió.
+fn assert_lote_revertido(
+    ctx: &Contexto,
+    creditos: &Vec<CreditoLote>,
+    ids_nuevos: &[&str],
+    error: Error,
+    total_esperado: u64,
+) {
+    let propietario = Address::generate(&ctx.env);
+    let hash = crear_hash(&ctx.env, 9);
+    let proyecto = Symbol::new(&ctx.env, "PROY_LOTE");
+
+    let resultado =
+        ctx.client
+            .try_emitir_lote(&ctx.verificador, &propietario, &hash, &proyecto, creditos);
+    assert_eq!(resultado, Err(Ok(error)));
+
+    for id in ids_nuevos {
+        assert_eq!(
+            ctx.client.try_verificar_credito(&Symbol::new(&ctx.env, id)),
+            Err(Ok(Error::CreditoNoExiste))
+        );
+    }
+    assert_eq!(ctx.client.total_emitido(), total_esperado);
+}
+
+#[test]
+fn lote_es_atomico_si_un_id_ya_existe() {
+    let ctx = setup();
+    let dueno_previo = Address::generate(&ctx.env);
+    emitir(&ctx, &Symbol::new(&ctx.env, "L002"), &dueno_previo);
+
+    let creditos = lote(&ctx.env, &[("L001", 10), ("L002", 20), ("L003", 30)]);
+    assert_lote_revertido(&ctx, &creditos, &["L001", "L003"], Error::CreditoYaExiste, 10);
+
+    // El crédito que ya existía no fue tocado.
+    let previo = ctx.client.verificar_credito(&Symbol::new(&ctx.env, "L002"));
+    assert_eq!(previo.propietario, dueno_previo);
+    assert_eq!(previo.toneladas, 10);
+    assert_eq!(ctx.client.total_movimientos(&Symbol::new(&ctx.env, "L002")), 1);
+}
+
+#[test]
+fn lote_es_atomico_si_un_id_se_repite_dentro_del_lote() {
+    let ctx = setup();
+    let creditos = lote(&ctx.env, &[("L001", 10), ("L002", 20), ("L001", 30)]);
+    assert_lote_revertido(&ctx, &creditos, &["L001", "L002"], Error::CreditoYaExiste, 0);
+}
+
+#[test]
+fn lote_es_atomico_si_un_credito_tiene_cero_toneladas() {
+    let ctx = setup();
+    let creditos = lote(&ctx.env, &[("L001", 10), ("L002", 0), ("L003", 30)]);
+    assert_lote_revertido(
+        &ctx,
+        &creditos,
+        &["L001", "L002", "L003"],
+        Error::ToneladasInvalidas,
+        0,
+    );
+}
+
+#[test]
+fn lote_vacio_falla() {
+    let ctx = setup();
+    let creditos = Vec::new(&ctx.env);
+    assert_lote_revertido(&ctx, &creditos, &[], Error::LoteVacio, 0);
+}
+
+#[test]
+fn lote_acepta_el_maximo_y_rechaza_uno_mas() {
+    let ctx = setup();
+    let propietario = Address::generate(&ctx.env);
+    let hash = crear_hash(&ctx.env, 9);
+    let proyecto = Symbol::new(&ctx.env, "PROY_LOTE");
+
+    let demasiados = lote_de_tamano(&ctx.env, MAX_CREDITOS_POR_LOTE + 1);
+    assert_lote_revertido(&ctx, &demasiados, &["LOTE0"], Error::LoteDemasiadoGrande, 0);
+
+    // El máximo entra dentro del presupuesto por defecto del host.
+    let maximo = lote_de_tamano(&ctx.env, MAX_CREDITOS_POR_LOTE);
+    let total = ctx
+        .client
+        .emitir_lote(&ctx.verificador, &propietario, &hash, &proyecto, &maximo);
+    assert_eq!(total, MAX_CREDITOS_POR_LOTE as u64);
+    let ultimo = std::format!("LOTE{}", MAX_CREDITOS_POR_LOTE - 1);
+    assert_eq!(
+        ctx.client
+            .verificar_credito(&Symbol::new(&ctx.env, &ultimo))
+            .toneladas,
+        1
+    );
+}
