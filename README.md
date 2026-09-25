@@ -138,6 +138,20 @@ scripts/                 Scripts de despliegue a testnet (.sh y .ps1)
 docs/ARQUITECTURA.md     Ciclo de vida, roles, modelo de datos y decisiones de diseño
 ```
 
+## Pendientes antes de mainnet
+
+Hoy el objetivo es un contrato sólido en **testnet** para el demo de
+Blockchain Builders 101. Mainnet se evalúa cuando haya aliados
+verificadores confirmados (Cercarbono, RIA, Masbosques). Antes de ese
+paso hace falta:
+
+- **Endurecer el rol de admin.** Hoy es una sola llave (`Address` fija en
+  `initialize`) y no se puede cambiar. Antes de mainnet se necesita
+  multifirma y/o una función para transferir el rol de admin, así una
+  llave perdida o comprometida no deja bloqueada la gobernanza de los
+  verificadores.
+- Revisar los TTL (`CREDITO_TTL_*`, `INSTANCE_TTL_*`) según el uso real.
+
 ## Seguridad
 
 Nunca subas al repositorio llaves secretas (`S...`) ni frases de
