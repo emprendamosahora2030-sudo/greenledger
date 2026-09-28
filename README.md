@@ -4,6 +4,8 @@ GreenLedger es un registro verificable de créditos de carbono construido
 sobre **Stellar / Soroban**. Es un producto de **CIT Has It All S.A.S.**
 (Medellín, Colombia).
 
+> Estado (28 sep 2026): repositorio abierto públicamente. Contrato v2 vigente y probado en Stellar testnet; próximo hito es sumar despliegue automatizado (CI) y ampliar cobertura de tests antes de evaluar mainnet.
+
 Cada crédito emitido es un activo único (no fungible) con un ciclo de
 vida controlado en cadena: **Emitido → Transferido (0 o más veces) →
 Retirado (definitivo)**. El objetivo es impedir la **doble venta** y la
