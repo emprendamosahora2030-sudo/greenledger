@@ -49,11 +49,11 @@ A diferencia de los registros tradicionales (hojas de cálculo, bases de datos c
 | **Ventaja diferencial** | Contrato ya desplegado y probado on-chain (no es solo propuesta); patrón reutilizable (base de TemisLedger) |
 | **Estructura de costos e ingresos** | Costos: infraestructura testnet/mainnet, verificación de campo. Ingresos: comisión por tokenización/transacción, licenciamiento del patrón a terceros |
 
-*(Nota: convertir esta tabla en imagen de una página — ej. con Canva — para cumplir el formato "imagen o enlace" que pide el entregable.)*
+Imagen: [`LeanCanvas_GreenLedger.png`](./LeanCanvas_GreenLedger.png)
 
 ## Backlog priorizado (Kanban)
 
-[Enlace al tablero de GitHub Projects — crear uno nuevo en el repo `emprendamosahora2030-sudo/greenledger` con las 7 historias de la sección de priorización como tarjetas, cada una con criterios de aceptación.]
+Tablero: [GreenLedger — Backlog](https://github.com/users/emprendamosahora2030-sudo/projects/1) — las 7 historias priorizadas, cada una con su criterio de aceptación en la descripción de la tarjeta.
 
 ## Arquitectura inicial
 
