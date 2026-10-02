@@ -1,5 +1,6 @@
 "use client";
 import {
+  ActaApiError,
   useActaClient,
   useCredential,
   useVault,
@@ -18,7 +19,12 @@ export type CarbonCredit = {
   status: "issued" | "transferred" | "retired";
 };
 
-const errMsg = (e: unknown) => (e instanceof Error ? e.message : JSON.stringify(e));
+const errMsg = (e: unknown) => {
+  if (e instanceof ActaApiError) {
+    return `${e.message} | status=${e.status} code=${e.code} requestId=${e.requestId ?? "-"} body=${JSON.stringify(e.details)}`;
+  }
+  return e instanceof Error ? e.message : JSON.stringify(e);
+};
 
 /** Borra solo el registro del emisor en el IndexedDB del SDK (no toca la llave AES). */
 function forgetIssuerIdentity(controller: string) {
@@ -57,6 +63,7 @@ export function useCarbonCredential() {
 
     await step("createVault", async () => {
       try {
+        console.info("[acta] createVault", { owner: credit.owner, ownerDid: identity.did });
         await createVault({ owner: credit.owner, ownerDid: identity.did, signTransaction: sign });
       } catch (e) {
         if (!/already/i.test(errMsg(e))) throw e;
