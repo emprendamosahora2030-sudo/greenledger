@@ -64,7 +64,18 @@ export function useCarbonCredential() {
     await step("createVault", async () => {
       try {
         console.info("[acta] createVault", { owner: credit.owner, ownerDid: identity.did });
-        await createVault({ owner: credit.owner, ownerDid: identity.did, signTransaction: sign });
+        // Un DID recién registrado puede tardar unos segundos en ser visible para la API de ACTA.
+        for (let i = 0; ; i++) {
+          try {
+            await createVault({ owner: credit.owner, ownerDid: identity.did, signTransaction: sign });
+            break;
+          } catch (e) {
+            const retryable = e instanceof ActaApiError && e.status === 400 && i < 3;
+            if (!retryable) throw e;
+            console.info(`[acta] createVault 400, reintento ${i + 1}/3 en 6s`);
+            await new Promise((r) => setTimeout(r, 6000));
+          }
+        }
       } catch (e) {
         if (!/already/i.test(errMsg(e))) throw e;
       }
