@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { requestAccess } from "@stellar/freighter-api";
-import { useCarbonCredential } from "@/lib/useCarbonCredential";
+import { useCarbonCredential } from "../lib/useCarbonCredential";
 
 export default function Home() {
   const { issueCredit, verifyCredit } = useCarbonCredential();
