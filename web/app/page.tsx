@@ -47,12 +47,9 @@ export default function Home() {
         <button
           disabled={busy || !address}
           onClick={() =>
-            run(async () => ({
-              txId: await issueCredit(
-                { id, tonnesCO2: tonnes, owner: address, status: "issued" },
-                address,
-              ),
-            }))
+            run(() =>
+              issueCredit({ id, tonnesCO2: tonnes, owner: address, status: "issued" }, address),
+            )
           }
         >
           2. Issue credential ({id})
