@@ -200,3 +200,7 @@ Nunca subas al repositorio llaves secretas (`S...`) ni frases de
 recuperación. `stellar keys generate` guarda las identidades fuera del
 repo; `.gitignore` excluye además cualquier archivo de identidades o
 `.env` que pudiera crearse localmente.
+
+## Credenciales verificables (ACTA)
+
+El contrato Soroban v2 sigue siendo la **fuente de verdad on-chain** de cada crédito. ACTA añade una Verifiable Credential (W3C VC 2.0) anclada en Stellar testnet como capa de verificación legible para no-técnicos. App de ejemplo en `web/` (`cp .env.example .env.local`, poner `NEXT_PUBLIC_ACTA_API_KEY`, `npm run dev`).
