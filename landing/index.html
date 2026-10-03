@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GreenLedger — Registro verificable de créditos de carbono en Stellar</title>
+<meta name="description" content="GreenLedger registra cada crédito de carbono como un activo único en Stellar/Soroban: emitido, transferido y retirado de forma irreversible, con contrato público verificable en testnet. Producto de CIT Has It All S.A.S.">
+<meta name="theme-color" content="#0a0a09">
+<meta property="og:type" content="website">
+<meta property="og:title" content="GreenLedger — Un crédito de carbono no puede venderse dos veces">
+<meta property="og:description" content="Registro verificable de créditos de carbono sobre Stellar/Soroban. Contrato público en testnet, código abierto y trazabilidad de emisión a retiro.">
+<meta property="og:locale" content="es_CO">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a09'/%3E%3Cpath d='M44 22a16 16 0 1 0 0 20H32v-8h13v3' fill='none' stroke='%23d4af37' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,400;1,9..144,500&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a09; --bg2:#100f0c; --panel:#14120e; --line:rgba(212,175,55,.16); --line2:rgba(255,255,255,.07);
+  --gold:#d4af37; --gold2:#f1d37a; --golddp:#a6822b; --cream:#f6f1e4; --text:#e9e3d2; --muted:#9a9488;
+  --expo:cubic-bezier(.16,1,.3,1); --spring:cubic-bezier(.34,1.56,.64,1);
+  --serif:'Fraunces',Georgia,serif; --sans:'Manrope',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+  --pad:clamp(20px,6vw,96px);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit}
+::selection{background:var(--gold);color:#000}
+.wrap{max-width:1240px;margin:0 auto;padding:0 var(--pad)}
+.serif{font-family:var(--serif)}
+.ital{font-style:italic;color:var(--gold);font-weight:500}
+.eyebrow{font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold);font-weight:600;display:flex;align-items:center;gap:14px;margin-bottom:24px}
+.eyebrow::before{content:'';width:36px;height:1px;background:var(--gold)}
+h1,h2,h3{font-family:var(--serif);font-weight:400;letter-spacing:-.015em;color:var(--cream)}
+h2{font-size:clamp(32px,4.6vw,58px);line-height:1.1}
+.lead{color:var(--muted);font-size:clamp(16px,1.4vw,19px);max-width:620px}
+section{padding:clamp(88px,12vw,168px) 0;position:relative}
+.progress{position:fixed;top:0;left:0;height:2px;width:100%;background:linear-gradient(90deg,var(--golddp),var(--gold2));transform-origin:0 50%;transform:scaleX(0);z-index:100}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:50;transition:background .5s var(--expo),border-color .5s,padding .5s var(--expo);border-bottom:1px solid transparent;padding:22px 0}
+nav.s{background:rgba(10,10,9,.78);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-color:var(--line2);padding:13px 0}
+.nav-in{display:flex;align-items:center;justify-content:space-between;gap:24px}
+.logo{font-family:var(--serif);font-size:23px;text-decoration:none;letter-spacing:.02em}
+.logo b{font-weight:600;color:var(--cream)}.logo i{color:var(--gold)}
+.links{display:flex;gap:34px}
+.links a{font-size:12px;letter-spacing:.16em;text-transform:uppercase;text-decoration:none;color:var(--text);opacity:.72;position:relative;transition:opacity .3s}
+.links a::after{content:'';position:absolute;left:0;bottom:-6px;height:1px;width:100%;background:var(--gold);transform:scaleX(0);transform-origin:right;transition:transform .5s var(--expo)}
+.links a:hover{opacity:1}.links a:hover::after{transform:scaleX(1);transform-origin:left}
+
+/* BUTTONS */
+.btn{--m:0px;display:inline-flex;align-items:center;gap:12px;font:700 13px var(--sans);letter-spacing:.14em;text-transform:uppercase;text-decoration:none;padding:18px 32px;border-radius:2px;position:relative;overflow:hidden;isolation:isolate;transition:transform .5s var(--spring),box-shadow .5s var(--expo),color .4s;cursor:pointer;border:1px solid var(--gold)}
+.btn .ar{transition:transform .5s var(--spring)}
+.btn:hover .ar{transform:translateX(6px)}
+.btn:active{transform:scale(.97)}
+.btn.solid{background:var(--gold);color:#0a0a09}
+.btn.solid::before{content:'';position:absolute;inset:0;background:var(--gold2);transform:translateY(101%);transition:transform .55s var(--expo);z-index:-1}
+.btn.solid:hover::before{transform:none}
+.btn.solid:hover{box-shadow:0 14px 44px -10px rgba(212,175,55,.55);transform:translateY(-3px)}
+.btn.ghost{color:var(--gold);background:transparent}
+.btn.ghost::before{content:'';position:absolute;inset:0;background:var(--gold);transform:scaleX(0);transform-origin:left;transition:transform .55s var(--expo);z-index:-1}
+.btn.ghost:hover{color:#0a0a09;transform:translateY(-3px)}.btn.ghost:hover::before{transform:scaleX(1)}
+.btn.sm{padding:11px 20px;font-size:11px}
+
+/* HERO */
+.hero{min-height:100svh;display:flex;align-items:center;padding:150px 0 90px;overflow:hidden;background:var(--bg)}
+.orb{position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none}
+.orb.a{width:640px;height:640px;right:-120px;top:-60px;background:radial-gradient(circle,rgba(212,175,55,.22),transparent 65%);animation:breathe 9s ease-in-out infinite}
+.orb.b{width:700px;height:700px;left:-260px;bottom:-240px;background:radial-gradient(circle,rgba(166,130,43,.16),transparent 65%);animation:breathe 12s ease-in-out infinite reverse}
+@keyframes breathe{0%,100%{transform:scale(1) translateY(0)}50%{transform:scale(1.08) translateY(-18px)}}
+.grid-bg{position:absolute;inset:0;background-image:linear-gradient(var(--line2) 1px,transparent 1px),linear-gradient(90deg,var(--line2) 1px,transparent 1px);background-size:88px 88px;mask-image:radial-gradient(ellipse 70% 60% at 50% 40%,#000,transparent 75%);-webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 40%,#000,transparent 75%);opacity:.55}
+.hero .wrap{position:relative;z-index:2}
+.hero h1{font-size:clamp(42px,7.4vw,108px);line-height:1.02;font-weight:300;max-width:15ch}
+.hero h1 .line{display:block;overflow:hidden;padding-bottom:.08em}
+.hero h1 .line>span{display:block;transform:translateY(105%);animation:rise 1.3s var(--expo) forwards}
+.hero h1 .line:nth-child(2)>span{animation-delay:.12s}
+.hero h1 b{font-weight:600}
+@keyframes rise{to{transform:none}}
+.hero .lead{margin:34px 0 44px;animation:fade 1.2s .5s var(--expo) both}
+.hero-cta{display:flex;flex-wrap:wrap;gap:16px;animation:fade 1.2s .65s var(--expo) both}
+@keyframes fade{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+.proof{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:80px;border-top:1px solid var(--line);animation:fade 1.2s .85s var(--expo) both}
+.proof a,.proof div{padding:26px 26px 0 0;text-decoration:none;display:block}
+.proof small{display:block;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+.proof span{font-family:var(--serif);font-size:clamp(17px,1.7vw,23px);color:var(--cream);line-height:1.3;display:inline-block;transition:transform .5s var(--spring)}
+.proof a:hover span{transform:translateX(6px)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#7ddc8a;margin-right:10px;box-shadow:0 0 0 0 rgba(125,220,138,.6);animation:ping 2.4s infinite}
+@keyframes ping{70%{box-shadow:0 0 0 10px rgba(125,220,138,0)}100%{box-shadow:0 0 0 0 rgba(125,220,138,0)}}
+
+/* MARQUEE */
+.marquee{border-block:1px solid var(--line2);background:var(--bg2);overflow:hidden;padding:20px 0}
+.mq{display:flex;gap:56px;width:max-content;animation:mq 38s linear infinite}
+.mq span{font-family:var(--serif);font-style:italic;font-size:20px;color:var(--muted);white-space:nowrap}
+.mq span::after{content:'◆';color:var(--gold);font-style:normal;font-size:9px;margin-left:56px;vertical-align:middle}
+@keyframes mq{to{transform:translateX(-50%)}}
+
+/* PROBLEMA */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:clamp(40px,7vw,110px);align-items:start}
+.two p{color:var(--muted);font-size:17px;margin-bottom:22px}
+.two p strong{color:var(--cream);font-weight:600}
+.pull{font-family:var(--serif);font-size:clamp(22px,2.4vw,30px);line-height:1.35;color:var(--cream);border-left:2px solid var(--gold);padding-left:26px;margin-top:34px}
+.card{background:linear-gradient(160deg,var(--panel),#0c0b09);border:1px solid var(--line);border-radius:6px;padding:clamp(28px,3.4vw,48px);position:relative;overflow:hidden;transition:transform .7s var(--expo),border-color .5s}
+.card::before{content:'';position:absolute;inset:0;background:radial-gradient(420px circle at var(--x,50%) var(--y,0%),rgba(212,175,55,.13),transparent 60%);opacity:0;transition:opacity .5s;pointer-events:none}
+.card:hover{transform:translateY(-6px);border-color:rgba(212,175,55,.42)}.card:hover::before{opacity:1}
+.tag{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+.card h3{font-size:28px;margin-bottom:14px}
+.card p{color:var(--muted);font-size:15.5px;margin:0}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:28px;margin-top:34px;padding-top:30px;border-top:1px solid var(--line2)}
+.stat b{display:block;font-family:var(--serif);font-style:italic;font-weight:400;font-size:clamp(40px,4.4vw,60px);color:var(--gold);line-height:1}
+.stat span{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:block;margin-top:8px}
+
+/* PASOS */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;margin-top:72px}
+.step{padding:34px 28px 36px;border:1px solid var(--line2);border-radius:6px;background:rgba(255,255,255,.012);position:relative;overflow:hidden}
+.step .n{font-family:var(--serif);font-style:italic;font-size:54px;color:var(--gold);opacity:.9;line-height:1;display:block;margin-bottom:26px;transition:transform .7s var(--spring)}
+.step:hover .n{transform:translateY(-6px) scale(1.06)}
+.step h3{font-size:24px;margin-bottom:10px}
+.step p{color:var(--muted);font-size:14.5px}
+.step code{display:inline-block;margin-top:16px;font:500 11.5px var(--mono);color:var(--gold2);background:rgba(212,175,55,.08);padding:5px 9px;border-radius:3px}
+.flow{display:flex;align-items:center;gap:14px;margin-top:40px;font:500 12px var(--mono);letter-spacing:.06em;color:var(--muted);flex-wrap:wrap}
+.flow i{color:var(--gold);font-style:normal}
+
+/* VALIDACION */
+.val{background:linear-gradient(180deg,var(--bg),var(--bg2) 50%,var(--bg))}
+.val-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin:64px 0 40px}
+.val-grid .card h3{font-size:23px}
+.badge{display:inline-flex;align-items:center;font:600 11px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--gold);border:1px solid var(--line);padding:6px 12px;border-radius:99px;margin-bottom:22px}
+.card a.lnk{display:inline-block;margin-top:22px;color:var(--gold2);font-size:13px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;font-weight:600;border-bottom:1px solid rgba(212,175,55,.4);padding-bottom:3px;transition:letter-spacing .5s var(--expo)}
+.card a.lnk:hover{letter-spacing:.16em}
+.term{background:#070706;border:1px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:0 40px 90px -30px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.02)}
+.term-bar{display:flex;align-items:center;gap:8px;padding:14px 18px;background:#0e0d0b;border-bottom:1px solid var(--line2)}
+.term-bar i{width:10px;height:10px;border-radius:50%;background:#2d2a24}
+.term-bar span{margin-left:12px;font:12px var(--mono);color:var(--muted)}
+.term pre{font:400 13px/2 var(--mono);color:#cfe9d0;padding:26px clamp(18px,3vw,34px);overflow-x:auto;white-space:pre}
+.term .d{color:#5d5951}.term .g{color:var(--gold)}.term .b{color:#7db8f0}.term .ok{color:#7ddc8a}
+.cid{display:flex;flex-wrap:wrap;align-items:center;gap:14px 20px;margin-top:22px;padding:20px 24px;border:1px dashed var(--line);border-radius:6px}
+.cid small{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold)}
+.cid code{font:500 13px var(--mono);color:var(--cream);word-break:break-all;flex:1 1 320px}
+.copy{font:600 11px var(--sans);letter-spacing:.14em;text-transform:uppercase;background:none;border:1px solid var(--line);color:var(--gold);padding:9px 16px;border-radius:2px;cursor:pointer;transition:all .4s var(--spring)}
+.copy:hover{background:var(--gold);color:#000;transform:translateY(-2px)}
+.txs{display:grid;grid-template-columns:repeat(2,1fr);gap:0 40px;margin-top:34px}
+.txs a{display:flex;justify-content:space-between;gap:16px;padding:15px 0;border-bottom:1px solid var(--line2);text-decoration:none;font-size:14px;color:var(--text);transition:padding .5s var(--expo),color .3s}
+.txs a:hover{padding-left:10px;color:var(--gold2)}
+.txs em{font:400 12px var(--mono);color:var(--muted);font-style:normal}
+
+/* DIFERENCIALES */
+.dif-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:70px}
+.dif .ic{width:46px;height:46px;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center;color:var(--gold);margin-bottom:24px;transition:transform .7s var(--spring),background .4s}
+.dif:hover .ic{transform:rotate(-12deg) scale(1.12);background:rgba(212,175,55,.1)}
+.dif h3{font-size:22px;margin-bottom:10px}
+.dif p{font-size:14.5px}
+.dif svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* FICHA */
+.ficha{display:grid;grid-template-columns:.85fr 1.15fr;gap:clamp(40px,7vw,110px);align-items:start}
+dl{border-top:1px solid var(--line)}
+dl div{display:grid;grid-template-columns:200px 1fr;gap:20px;padding:20px 0;border-bottom:1px solid var(--line2);transition:background .5s,padding .5s var(--expo)}
+dl div:hover{background:rgba(212,175,55,.035);padding-left:14px}
+dt{font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);padding-top:3px}
+dd{color:var(--text);font-size:15.5px}
+dd code{font:400 12.5px var(--mono);color:var(--gold2);word-break:break-all}
+dd a{color:var(--gold2)}
+
+/* CTA */
+.cta{text-align:center;background:radial-gradient(ellipse 800px 420px at 50% 100%,rgba(212,175,55,.14),transparent 70%),var(--bg);overflow:hidden}
+.cta h2{max-width:18ch;margin:0 auto 26px;font-size:clamp(36px,6vw,80px);font-weight:300}
+.cta .lead{margin:0 auto 44px}
+.mail{display:inline-block;font-family:var(--serif);font-style:italic;font-size:clamp(20px,3vw,34px);color:var(--gold);text-decoration:none;border-bottom:1px solid rgba(212,175,55,.45);padding-bottom:6px;margin-bottom:46px;word-break:break-all;transition:letter-spacing .6s var(--expo),color .3s}
+.mail:hover{letter-spacing:.02em;color:var(--gold2)}
+.cta .hero-cta{justify-content:center;animation:none}
+footer{border-top:1px solid var(--line2);padding:38px 0;font-size:12.5px;color:var(--muted)}
+.foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.foot nav{position:static;display:flex;gap:24px;padding:0;background:none;border:0;backdrop-filter:none}
+.foot a{text-decoration:none;transition:color .3s}.foot a:hover{color:var(--gold)}
+
+/* REVEAL */
+.js .rv{opacity:0;transform:translateY(46px) scale(.985);transition:opacity 1.1s var(--expo),transform 1.1s var(--expo);transition-delay:calc(var(--i,0)*90ms)}
+.js .rv.in{opacity:1;transform:none}
+
+@media(max-width:980px){
+  .links{display:none}
+  .two,.ficha{grid-template-columns:1fr}
+  .steps{grid-template-columns:repeat(2,1fr)}
+  .val-grid,.dif-grid{grid-template-columns:1fr 1fr}
+  .proof{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+  .steps,.val-grid,.dif-grid,.txs{grid-template-columns:1fr}
+  dl div{grid-template-columns:1fr;gap:6px}
+  .btn{width:100%;justify-content:center}
+  .hero{padding-top:120px}
+  .cid code{flex-basis:100%}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition-duration:.01ms!important}
+  .js .rv{opacity:1;transform:none}
+  .hero h1 .line>span{transform:none}
+}
+</style>
+</head>
+<body>
+<div class="progress" id="pg"></div>
+
+<nav id="nav"><div class="wrap nav-in">
+  <a class="logo" href="#top"><b>GREEN</b><i>Ledger</i></a>
+  <div class="links"><a href="#problema">Problema</a><a href="#funciona">Cómo funciona</a><a href="#validacion">Validación</a><a href="#diferenciales">Diferenciales</a><a href="#ficha">Ficha</a></div>
+  <a class="btn solid sm" href="mailto:emprendamosahora2030@gmail.com?subject=GreenLedger%20%E2%80%94%20Contacto">Contactar <span class="ar">→</span></a>
+</div></nav>
+
+<header class="hero" id="top">
+  <div class="orb a"></div><div class="orb b"></div><div class="grid-bg"></div>
+  <div class="wrap">
+    <div class="eyebrow">Registro verificable · Stellar / Soroban</div>
+    <h1><span class="line"><span>Un crédito de carbono</span></span><span class="line"><span><b>no se vende <span class="ital">dos veces</span>.</b></span></span></h1>
+    <p class="lead">GreenLedger registra cada crédito como un activo único con ciclo de vida controlado en cadena —emitido, transferido, retirado— para impedir la doble venta y la doble contabilidad, sin exponer datos personales.</p>
+    <div class="hero-cta">
+      <a class="btn solid" href="mailto:emprendamosahora2030@gmail.com?subject=GreenLedger%20%E2%80%94%20Contacto">Contactar al equipo <span class="ar">→</span></a>
+      <a class="btn ghost" href="https://stellar.expert/explorer/testnet/contract/CANJ564LVB4WBAYJWXRQKHJII456RW6XBWWM2FQCSSC6HLG27JP2A5O2" target="_blank" rel="noopener">Ver contrato en Stellar Explorer <span class="ar">↗</span></a>
+    </div>
+    <div class="proof">
+      <div><small>Aval</small><span>Stellar Apex</span></div>
+      <a href="https://stellar.expert/explorer/testnet/contract/CANJ564LVB4WBAYJWXRQKHJII456RW6XBWWM2FQCSSC6HLG27JP2A5O2" target="_blank" rel="noopener"><small>Contrato</small><span><i class="dot"></i>Probado en testnet ↗</span></a>
+      <a href="https://github.com/emprendamosahora2030-sudo/greenledger" target="_blank" rel="noopener"><small>Código</small><span>Repositorio público ↗</span></a>
+    </div>
+  </div>
+</header>
+
+<div class="marquee" aria-hidden="true"><div class="mq">
+  <span>Emitido</span><span>Transferido</span><span>Retirado</span><span>Hash SHA-256 del certificado</span><span>Historial de propiedad</span><span>Lotes atómicos de hasta 25 créditos</span><span>Verificación pública sin firma</span><span>Cumplimiento · Decreto 973</span>
+  <span>Emitido</span><span>Transferido</span><span>Retirado</span><span>Hash SHA-256 del certificado</span><span>Historial de propiedad</span><span>Lotes atómicos de hasta 25 créditos</span><span>Verificación pública sin firma</span><span>Cumplimiento · Decreto 973</span>
+</div></div>
+
+<section id="problema"><div class="wrap">
+  <div class="eyebrow rv">El problema</div>
+  <h2 class="rv" style="max-width:20ch">La confianza en el carbono no puede depender de <span class="ital">un registro editable</span>.</h2>
+  <div class="two" style="margin-top:72px">
+    <div class="rv">
+      <p>Cada tonelada certificada se convierte en un crédito que una empresa compra para compensar emisiones. Si el registro es centralizado y sin huella pública, <strong>nada impide técnicamente que el mismo crédito se venda o se reporte más de una vez</strong>.</p>
+      <p>Para una entidad pública o un comprador corporativo, eso significa auditar a posteriori lo que debería poder verificarse en el momento.</p>
+      <div class="pull">GreenLedger reemplaza la confianza por verificación.</div>
+    </div>
+    <div class="card rv" style="--i:2">
+      <div class="tag">Riesgo del modelo actual</div>
+      <h3>Doble venta y doble contabilidad</h3>
+      <p>Sin un estado único e irreversible, un crédito ya certificado puede aparecer activo en dos balances a la vez. En GreenLedger, un crédito retirado no admite transferencia ni nuevo retiro: el contrato lo rechaza.</p>
+      <div class="stats">
+        <div class="stat"><b>1</b><span>Estado válido por crédito</span></div>
+        <div class="stat"><b>0</b><span>Datos personales en la red</span></div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<section id="funciona" class="val"><div class="wrap">
+  <div class="eyebrow rv">Cómo funciona</div>
+  <h2 class="rv" style="max-width:20ch">Ciclo de vida <span class="ital">controlado en cadena</span>.</h2>
+  <div class="steps">
+    <div class="step card rv" style="--i:0"><span class="n">01</span><h3>Emisión</h3><p>Un verificador autorizado por el admin emite el crédito con toneladas de CO₂e, proyecto de origen y hash SHA-256 del certificado.</p><code>emitir_credito</code></div>
+    <div class="step card rv" style="--i:1"><span class="n">02</span><h3>Lotes</h3><p>De 1 a 25 créditos de una misma verificación. Es atómico: si uno falla, no se emite ninguno.</p><code>emitir_lote</code></div>
+    <div class="step card rv" style="--i:2"><span class="n">03</span><h3>Transferencia</h3><p>Solo el propietario actual cambia el dueño. Cada movimiento queda en un historial cronológico paginado.</p><code>transferir_credito</code></div>
+    <div class="step card rv" style="--i:3"><span class="n">04</span><h3>Retiro</h3><p>El crédito se retira a nombre de un beneficiario, de forma irreversible. No puede reutilizarse ni revenderse.</p><code>retirar_credito</code></div>
+  </div>
+  <div class="flow rv"><span>Emitido</span><i>→</i><span>Transferido (0 o más veces)</span><i>→</i><span>Retirado (definitivo)</span></div>
+</div></section>
+
+<section id="validacion"><div class="wrap">
+  <div class="eyebrow rv">Validación del ecosistema</div>
+  <h2 class="rv" style="max-width:20ch">Verificable por <span class="ital">cualquiera</span>, no por promesa.</h2>
+  <div class="val-grid">
+    <div class="card rv" style="--i:0"><span class="badge">Aval</span><h3>Stellar Apex</h3><p>El proyecto cuenta con el aval de Stellar Apex y se prepara para la convocatoria de Stellar Community Fund (SCF).</p></div>
+    <div class="card rv" style="--i:1"><span class="badge">On-chain</span><h3>Contrato probado en testnet</h3><p>Ciclo completo ejecutado y verificado: emisión, transferencia, retiro, lotes y rechazos en cadena.</p><a class="lnk" href="https://stellar.expert/explorer/testnet/contract/CANJ564LVB4WBAYJWXRQKHJII456RW6XBWWM2FQCSSC6HLG27JP2A5O2" target="_blank" rel="noopener">Abrir en Stellar Expert ↗</a></div>
+    <div class="card rv" style="--i:2"><span class="badge">Abierto</span><h3>Repositorio público</h3><p>Contrato Soroban, pruebas unitarias, scripts de despliegue, guion de demo y arquitectura, disponibles para auditoría.</p><a class="lnk" href="https://github.com/emprendamosahora2030-sudo/greenledger" target="_blank" rel="noopener">Ver en GitHub ↗</a></div>
+  </div>
+  <div class="term rv">
+    <div class="term-bar"><i></i><i></i><i></i><span>stellar · testnet · GreenLedger v2</span></div>
+<pre><span class="d">$</span> stellar contract invoke --id <span class="g">CANJ564L…2A5O2</span> --network testnet --send=no \
+    -- historial_credito --id <span class="b">CRED001</span> --desde 0 --limite 50
+
+<span class="d">›</span> <span class="b">Emision</span>        <span class="d">→</span> propietario: GDUU…D7PZ
+<span class="d">›</span> <span class="b">Transferencia</span>  <span class="d">→</span> nuevo propietario: GC4H…LTWM
+<span class="d">›</span> <span class="b">Retiro</span>         <span class="d">→</span> beneficiario: <span class="g">EMPRESA_DEMO</span>
+<span class="d">›</span> total_movimientos = <span class="b">3</span>   total_emitido = <span class="b">485</span> t
+<span class="d">›</span> retirar_credito(CRED001) otra vez → <span class="ok">rechazado</span> <span class="d">#5 CreditoRetirado</span></pre>
+  </div>
+  <div class="cid rv"><small>Contract ID · v2 · testnet</small><code id="cid">CANJ564LVB4WBAYJWXRQKHJII456RW6XBWWM2FQCSSC6HLG27JP2A5O2</code><button class="copy" id="cp" type="button">Copiar</button></div>
+  <div class="txs rv">
+    <a href="https://stellar.expert/explorer/testnet/tx/bc602f796a371146d2cd8e269d41dedf5bf69cc97026729d2ba3124caeae4055" target="_blank" rel="noopener">Despliegue del contrato <em>bc602f79…</em></a>
+    <a href="https://stellar.expert/explorer/testnet/tx/f44c5d29996505cee9617830556c071a79c426355a8dc570e42370739df10085" target="_blank" rel="noopener">Emisión CRED001 · 100 t <em>f44c5d29…</em></a>
+    <a href="https://stellar.expert/explorer/testnet/tx/46b390088672549155d0dd8fb0348031824bdcdb9b9fc6b73838c1a299538e53" target="_blank" rel="noopener">Transferencia a comprador <em>46b39008…</em></a>
+    <a href="https://stellar.expert/explorer/testnet/tx/2b0c25f20d583f0cdf78d786ff69723ac95cb42ab311e18276a05fe233d7d6cb" target="_blank" rel="noopener">Retiro a EMPRESA_DEMO <em>2b0c25f2…</em></a>
+    <a href="https://stellar.expert/explorer/testnet/tx/d51fdd99948bd7b25fae5db6a0ddf2eea0ec106d983300848e50a47e46c7be74" target="_blank" rel="noopener">Lote LOTE001..003 · 60 t <em>d51fdd99…</em></a>
+    <a href="https://stellar.expert/explorer/testnet/tx/3bdc3696780c5e635ce1bc7362b5e505dba9d5baa6ff87b4a2a86b231cd2ecc8" target="_blank" rel="noopener">Lote de 25 créditos · 325 t <em>3bdc3696…</em></a>
+  </div>
+</div></section>
+
+<section id="diferenciales" class="val"><div class="wrap">
+  <div class="eyebrow rv">Diferenciales</div>
+  <h2 class="rv" style="max-width:20ch">Diseñado para <span class="ital">auditar</span>, no para prometer.</h2>
+  <div class="dif-grid">
+    <div class="card dif rv" style="--i:0"><div class="ic"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><h3>Sin datos personales en la red</h3><p>Solo direcciones, toneladas, estado, proyecto, fechas y hash del certificado. Nunca nombres, documentos ni el PDF.</p></div>
+    <div class="card dif rv" style="--i:1"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div><h3>Certificado por hash SHA-256</h3><p>Cualquiera compara un hash con el guardado en el crédito, sin firma y sin exponer el documento.</p></div>
+    <div class="card dif rv" style="--i:2"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 3-6.2"/><path d="M4 4v4h4"/><path d="M12 8v4l3 2"/></svg></div><h3>Historial de propiedad</h3><p>Emisión, transferencias y retiro en orden cronológico, paginado, consultable públicamente.</p></div>
+    <div class="card dif rv" style="--i:3"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div><h3>Lotes atómicos</h3><p>Hasta 25 créditos por verificación: todo o nada. Un lote de 25 usa ~3,7 % de las instrucciones permitidas por transacción.</p></div>
+    <div class="card dif rv" style="--i:4"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg></div><h3>Rechazos comprobados</h3><p>Doble retiro, id inexistente, lote de 26, id repetido y firmante no autorizado: todos probados en cadena.</p></div>
+    <div class="card dif rv" style="--i:5"><div class="ic"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></div><h3>Credenciales ACTA (W3C VC 2.0)</h3><p>Capa de verificación legible para no técnicos, anclada en Stellar testnet. El contrato sigue siendo la fuente de verdad.</p></div>
+  </div>
+</div></section>
+
+<section id="ficha"><div class="wrap ficha">
+  <div class="rv">
+    <div class="eyebrow">Ficha del proyecto</div>
+    <h2>Datos <span class="ital">verificables</span> del proyecto.</h2>
+    <p class="lead" style="margin-top:24px">Estado real a la fecha: contrato vigente en testnet. Mainnet se evalúa con aliados verificadores confirmados.</p>
+  </div>
+  <dl class="rv" style="--i:2">
+    <div><dt>Producto</dt><dd>GreenLedger — registro verificable de créditos de carbono</dd></div>
+    <div><dt>Titular</dt><dd>CIT Has It All S.A.S. · Medellín, Colombia</dd></div>
+    <div><dt>Red</dt><dd>Stellar / Soroban</dd></div>
+    <div><dt>Contrato vigente</dt><dd><code>CANJ564LVB4WBAYJWXRQKHJII456RW6XBWWM2FQCSSC6HLG27JP2A5O2</code> (v2, testnet)</dd></div>
+    <div><dt>WASM hash</dt><dd><code>d273c0d5e04827dda898160a3729c62621bddf26abfb0bcd24ca66806fd40d79</code> · 16.033 bytes</dd></div>
+    <div><dt>Toneladas emitidas</dt><dd>485 t en pruebas (100 + 60 + 325)</dd></div>
+    <div><dt>Normativa</dt><dd>Cumplimiento · Decreto 973</dd></div>
+    <div><dt>Ecosistema</dt><dd>Aval Stellar Apex · Postulación SCF</dd></div>
+    <div><dt>Siguiente etapa</dt><dd>Mainnet, con aliados verificadores (Cercarbono, RIA, Masbosques) y rol de admin endurecido (multifirma)</dd></div>
+    <div><dt>Código</dt><dd><a href="https://github.com/emprendamosahora2030-sudo/greenledger" target="_blank" rel="noopener">github.com/emprendamosahora2030-sudo/greenledger</a></dd></div>
+  </dl>
+</div></section>
+
+<section class="cta" id="contacto"><div class="wrap">
+  <div class="eyebrow rv" style="justify-content:center">Contacto</div>
+  <h2 class="rv">Verifiquemos juntos <span class="ital">cada tonelada</span>.</h2>
+  <p class="lead rv">Entidades públicas, compradores y programas de convocatoria: escríbanos y coordinamos una revisión técnica del contrato.</p>
+  <a class="mail rv" href="mailto:emprendamosahora2030@gmail.com?subject=GreenLedger%20%E2%80%94%20Contacto">emprendamosahora2030@gmail.com</a>
+  <div class="hero-cta rv">
+    <a class="btn solid" href="mailto:emprendamosahora2030@gmail.com?subject=GreenLedger%20%E2%80%94%20Contacto">Escribir al equipo <span class="ar">→</span></a>
+    <a class="btn ghost" href="https://stellar.expert/explorer/testnet/contract/CANJ564LVB4WBAYJWXRQKHJII456RW6XBWWM2FQCSSC6HLG27JP2A5O2" target="_blank" rel="noopener">Ver contrato en Stellar Explorer <span class="ar">↗</span></a>
+  </div>
+</div></section>
+
+<footer><div class="wrap foot">
+  <span>© 2026 GreenLedger · CIT Has It All S.A.S. · Medellín, Colombia · Construido sobre Stellar.</span>
+  <nav><a href="#problema">Problema</a><a href="#validacion">Validación</a><a href="#ficha">Ficha</a></nav>
+</div></footer>
+
+<script>
+(function(){
+  var d=document,h=d.documentElement;h.classList.add('js');
+  var nav=d.getElementById('nav'),pg=d.getElementById('pg');
+  function sc(){var y=window.scrollY,m=h.scrollHeight-innerHeight;nav.classList.toggle('s',y>30);pg.style.transform='scaleX('+(m>0?y/m:0)+')'}
+  sc();addEventListener('scroll',sc,{passive:true});
+  var els=d.querySelectorAll('.rv');
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(e){e.forEach(function(x){if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target)}})},{threshold:.12,rootMargin:'0px 0px -6% 0px'});
+    els.forEach(function(el){io.observe(el)});
+  }else els.forEach(function(el){el.classList.add('in')});
+  d.querySelectorAll('.card').forEach(function(c){c.addEventListener('pointermove',function(e){var r=c.getBoundingClientRect();c.style.setProperty('--x',e.clientX-r.left+'px');c.style.setProperty('--y',e.clientY-r.top+'px')})});
+  var cp=d.getElementById('cp');
+  if(cp)cp.addEventListener('click',function(){var t=d.getElementById('cid').textContent;
+    function ok(){cp.textContent='Copiado ✓';setTimeout(function(){cp.textContent='Copiar'},1800)}
+    try{navigator.clipboard.writeText(t).then(ok)}catch(e){var r=d.createRange();r.selectNode(d.getElementById('cid'));getSelection().removeAllRanges();getSelection().addRange(r);ok()}});
+})();
+</script>
+</body>
+</html>
