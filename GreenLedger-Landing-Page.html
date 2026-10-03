@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>GreenLedger — Landing Page</title>
+</head>
+<body style="margin:0;padding:0;background:#0D0D0D;">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,400;1,500&family=Inter:wght@400;500;600;700&display=swap');
+  :root{
+    --bg:#0D0D0D; --gold:#D4AF37; --gold-dp:#A6822B; --cream:#F6F1E4; --light:#EDE7D6; --muted:#9A9488;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  .gl{font-family:'Inter',sans-serif; background:var(--bg); color:var(--light); width:100%; overflow:hidden;}
+  .eyebrow{font-family:'Inter',sans-serif; font-size:13px; letter-spacing:4px; text-transform:uppercase; color:var(--gold); font-weight:600; margin-bottom:22px;}
+  .divider{width:64px; height:1px; background:var(--gold); margin:28px 0;}
+  .serif{font-family:'Fraunces',serif;}
+  .ital{font-style:italic; color:var(--gold); font-weight:500;}
+  .btn-solid{display:inline-block; background:var(--gold); color:#0D0D0D; font-weight:700; font-size:14px; letter-spacing:1px; text-transform:uppercase; padding:18px 36px; border-radius:2px; text-decoration:none;}
+  .btn-outline{display:inline-block; border:1px solid var(--gold); color:var(--gold); font-weight:700; font-size:14px; letter-spacing:1px; text-transform:uppercase; padding:17px 35px; border-radius:2px; text-decoration:none;}
+
+  /* NAV */
+  .nav{position:relative; z-index:5; display:flex; align-items:center; justify-content:space-between; padding:38px 80px;}
+  .wordmark{font-family:'Fraunces',serif; font-size:24px; letter-spacing:1px;}
+  .wordmark b{font-weight:600; color:var(--light);}
+  .wordmark i{font-style:italic; color:var(--gold);}
+  .nav-links{display:flex; align-items:center; gap:48px;}
+  .nav-links a{color:var(--light); text-decoration:none; font-size:13px; letter-spacing:1.5px; text-transform:uppercase; opacity:.8;}
+
+  /* HERO */
+  .hero{position:relative; min-height:780px; display:flex; align-items:center; padding:0 80px;
+    background:
+      radial-gradient(ellipse 900px 600px at 78% 20%, rgba(212,175,55,0.10), transparent 60%),
+      radial-gradient(ellipse 1200px 800px at 15% 85%, rgba(166,130,43,0.08), transparent 55%),
+      linear-gradient(180deg, #0a0a0a 0%, #111010 55%, #0a0a0a 100%);
+  }
+  .hero::before{content:''; position:absolute; inset:0;
+    background-image: repeating-linear-gradient(115deg, rgba(255,255,255,0.015) 0 2px, transparent 2px 180px);
+    pointer-events:none;
+  }
+  .hero-content{position:relative; z-index:2; max-width:760px; padding:60px 0;}
+  .hero h1{font-size:64px; line-height:1.12; font-weight:400; color:var(--light); letter-spacing:-0.5px;}
+  .hero h1 .r2{display:block; font-weight:600;}
+  .hero p.sub{font-family:'Inter',sans-serif; font-size:17px; line-height:1.7; color:var(--muted); max-width:560px; margin:32px 0 44px;}
+  .hero-ctas{display:flex; gap:18px;}
+
+  /* SECTION SHELL */
+  .section{padding:140px 80px; position:relative;}
+  .section-head{max-width:620px; margin-bottom:80px;}
+  .section-head h2{font-size:42px; font-weight:400; line-height:1.25; color:var(--light);}
+
+  /* PROBLEMA */
+  .problema{background:#0D0D0D;}
+  .problema-grid{display:grid; grid-template-columns:1fr 1fr; gap:80px; align-items:start;}
+  .card-mono{background:linear-gradient(160deg,#17130c,#0c0c0c); border:1px solid rgba(212,175,55,0.18); border-radius:6px; padding:44px; }
+  .card-mono .tag{font-size:12px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:18px;}
+  .card-mono h3{font-family:'Fraunces',serif; font-size:26px; color:var(--light); margin-bottom:16px;}
+  .card-mono p{color:var(--muted); font-size:15px; line-height:1.8;}
+  .stat-row{display:flex; gap:40px; margin-top:36px;}
+  .stat b{display:block; font-family:'Fraunces',serif; font-size:36px; color:var(--gold); font-style:italic;}
+  .stat span{font-size:12px; letter-spacing:1px; text-transform:uppercase; color:var(--muted);}
+  .problema-text p{color:var(--muted); font-size:16px; line-height:1.9; margin-bottom:20px;}
+  .problema-text strong{color:var(--light); font-weight:600;}
+
+  /* COMO FUNCIONA */
+  .funciona{background:linear-gradient(180deg,#0a0a0a,#121008 60%,#0a0a0a);}
+  .steps{display:grid; grid-template-columns:repeat(4,1fr); gap:32px;}
+  .step{border-top:1px solid rgba(212,175,55,0.3); padding-top:28px;}
+  .step .num{font-family:'Fraunces',serif; font-style:italic; color:var(--gold); font-size:32px; margin-bottom:18px; display:block;}
+  .step h4{font-size:17px; color:var(--light); margin-bottom:12px; font-weight:600;}
+  .step p{font-size:14px; color:var(--muted); line-height:1.7;}
+
+  /* PRUEBA / LAPTOP MOCKUP */
+  .prueba{background:#0D0D0D;}
+  .prueba-wrap{position:relative; background:
+      radial-gradient(ellipse 800px 500px at 20% 10%, rgba(212,175,55,0.08), transparent 60%),
+      linear-gradient(145deg,#141311,#0a0a0a);
+    border-radius:10px; padding:80px 60px; display:flex; justify-content:center;
+  }
+  .laptop{width:820px; max-width:100%;}
+  .laptop-screen{background:#060606; border:10px solid #1c1a16; border-bottom:none; border-radius:10px 10px 0 0; padding:22px 26px; box-shadow:0 30px 70px rgba(0,0,0,0.6);}
+  .laptop-base{height:16px; background:linear-gradient(180deg,#232019,#141210); border-radius:0 0 10px 10px; position:relative;}
+  .laptop-base::after{content:''; position:absolute; left:50%; top:0; transform:translateX(-50%); width:90px; height:5px; background:#0a0a0a; border-radius:0 0 4px 4px;}
+  .term-bar{display:flex; gap:7px; margin-bottom:16px;}
+  .term-bar span{width:10px; height:10px; border-radius:50%; background:#3a3630;}
+  .term-line{font-family:monospace; font-size:12.5px; line-height:1.9; color:#9fe8a0;}
+  .term-line .c1{color:var(--gold);}
+  .term-line .c2{color:#6fb8ff;}
+  .term-line .dim{color:#5a5650;}
+  .proof-caption{text-align:center; margin-top:40px;}
+  .proof-caption .tag{font-size:12px; letter-spacing:2px; text-transform:uppercase; color:var(--gold); margin-bottom:10px;}
+  .proof-caption a{color:var(--light); text-decoration:underline; text-decoration-color:rgba(212,175,55,0.4);}
+  .proof-caption p{color:var(--muted); font-size:14px; margin-top:8px;}
+
+  /* CONTACTO */
+  .contacto{background:linear-gradient(180deg,#0a0a0a,#121008); text-align:center; padding:160px 80px;}
+  .contacto h2{font-size:48px; max-width:720px; margin:0 auto 36px; line-height:1.3;}
+  .contacto .email{font-family:'Fraunces',serif; font-style:italic; color:var(--gold); font-size:22px; display:inline-block; margin-bottom:44px; text-decoration:none; border-bottom:1px solid rgba(212,175,55,0.4); padding-bottom:4px;}
+  .contacto-ctas{display:flex; gap:18px; justify-content:center;}
+
+  /* FOOTER */
+  .footer{display:flex; justify-content:space-between; align-items:center; padding:40px 80px; border-top:1px solid rgba(255,255,255,0.08);}
+  .footer span{font-size:12px; color:var(--muted); letter-spacing:0.5px;}
+  .footer .links{display:flex; gap:28px;}
+  .footer a{color:var(--muted); text-decoration:none; font-size:12px;}
+</style>
+
+<div class="gl">
+
+  <!-- NAV -->
+  <div class="nav">
+    <div class="wordmark"><b>GREEN</b><i>Ledger</i></div>
+    <div class="nav-links">
+      <a href="#problema">El problema</a>
+      <a href="#funciona">Cómo funciona</a>
+      <a href="#prueba">Prueba en Stellar</a>
+      <a href="#contacto">Contacto</a>
+    </div>
+    <a href="#contacto" class="btn-outline" style="padding:12px 26px; font-size:12px;">Ver en Stellar</a>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-content">
+      <div class="eyebrow">Trazabilidad blockchain · Créditos de carbono</div>
+      <h1 class="serif">Un crédito de carbono <span class="r2">no puede venderse <span class="ital">dos veces</span>.</span><span class="r2">Ahora <span class="ital">puede probarse</span>.</span></h1>
+      <p class="sub">GreenLedger registra cada crédito de carbono como un activo único y verificable sobre la red Stellar — trazable desde su emisión hasta su retiro, sin depender de la palabra de nadie.</p>
+      <div class="hero-ctas">
+        <a href="#prueba" class="btn-solid">Ver la prueba en vivo</a>
+        <a href="#funciona" class="btn-outline">Cómo funciona</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROBLEMA -->
+  <div class="section problema" id="problema">
+    <div class="section-head">
+      <div class="eyebrow">El problema</div>
+      <h2 class="serif">Los registros de carbono de hoy confían en <span class="ital">hojas de cálculo</span>.</h2>
+    </div>
+    <div class="problema-grid">
+      <div class="problema-text">
+        <p><strong>Mónica</strong> dirige un proyecto de reforestación certificado en el Amazonas. Cada tonelada de CO₂ que captura su bosque se convierte en un crédito que empresas compran para compensar sus emisiones.</p>
+        <p>El problema: ese crédito vive en un registro centralizado, editable, sin huella pública. Nada impide — técnicamente — que el mismo crédito se venda, se reporte o se "retire" más de una vez en distintos sistemas.</p>
+        <p>El mercado voluntario de carbono mueve miles de millones de dólares sobre esa confianza frágil. <strong>GreenLedger reemplaza la confianza por verificación.</strong></p>
+      </div>
+      <div class="card-mono">
+        <div class="tag">Riesgo del modelo actual</div>
+        <h3>Doble conteo, doble venta</h3>
+        <p>Sin un registro público e inmutable, un mismo crédito de carbono puede aparecer como "activo" en dos balances distintos al mismo tiempo — invisibilizando el fraude hasta la auditoría.</p>
+        <div class="stat-row">
+          <div class="stat"><b>2×</b><span>Riesgo de doble conteo</span></div>
+          <div class="stat"><b>0</b><span>Trazabilidad pública hoy</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMO FUNCIONA -->
+  <div class="section funciona" id="funciona">
+    <div class="section-head">
+      <div class="eyebrow">Cómo funciona</div>
+      <h2 class="serif">Cuatro pasos, un <span class="ital">registro</span> imposible de falsificar.</h2>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <span class="num">01</span>
+        <h4>Emisión</h4>
+        <p>El proyecto certificado emite el crédito como un activo único sobre Stellar, con metadatos verificables de origen y cantidad.</p>
+      </div>
+      <div class="step">
+        <span class="num">02</span>
+        <h4>Registro</h4>
+        <p>Cada transacción queda escrita en un contrato público — consultable por cualquiera, en cualquier momento, sin intermediarios.</p>
+      </div>
+      <div class="step">
+        <span class="num">03</span>
+        <h4>Transferencia</h4>
+        <p>Al venderse, el crédito cambia de titular on-chain. El historial completo de propiedad queda visible y es irreversible.</p>
+      </div>
+      <div class="step">
+        <span class="num">04</span>
+        <h4>Retiro</h4>
+        <p>Cuando una empresa compensa sus emisiones, el crédito se marca como retirado para siempre — imposible de reutilizar o revender.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRUEBA EN STELLAR -->
+  <div class="section prueba" id="prueba">
+    <div class="section-head">
+      <div class="eyebrow">Prueba en vivo</div>
+      <h2 class="serif">No lo digas. <span class="ital">Muéstralo</span> en la cadena.</h2>
+    </div>
+    <div class="prueba-wrap">
+      <div class="laptop">
+        <div class="laptop-screen">
+          <div class="term-bar"><span></span><span></span><span></span></div>
+          <div class="term-line"><span class="dim">$</span> stellar contract invoke --id <span class="c1" data-prop="contractId">CA7QYN...GLEDGER01</span> \</div>
+          <div class="term-line">&nbsp;&nbsp;--source mónica-issuer --network public \</div>
+          <div class="term-line">&nbsp;&nbsp;-- retire_credit --amount <span class="c2">1</span> --project <span class="c2">"Amazonia-VV001"</span></div>
+          <div class="term-line">&nbsp;</div>
+          <div class="term-line"><span class="dim">></span> tx_status: <span style="color:#9fe8a0">SUCCESS</span></div>
+          <div class="term-line"><span class="dim">></span> ledger: <span class="c2">52,318,904</span>  fee: <span class="c2">100 stroops</span></div>
+          <div class="term-line"><span class="dim">></span> explorer: <span class="c1">stellar.expert/explorer/public/tx/...</span></div>
+        </div>
+        <div class="laptop-base"></div>
+      </div>
+    </div>
+    <div class="proof-caption">
+      <div class="tag">Contrato verificado</div>
+      <a href="#" data-prop="explorerUrl">Ver el contrato completo en stellar.expert →</a>
+      <p>Cada emisión, transferencia y retiro de GreenLedger es público y auditable por cualquier persona, en tiempo real.</p>
+    </div>
+  </div>
+
+  <!-- CONTACTO -->
+  <div class="contacto" id="contacto">
+    <div class="eyebrow" style="text-align:center;">Hablemos</div>
+    <h2 class="serif" style="margin-left:auto;margin-right:auto;">¿Listo para que tus créditos de carbono <span class="ital">se defiendan solos?</span></h2>
+    <a href="mailto:hola@greenledger.io" class="email" data-prop="contactEmail">hola@greenledger.io</a>
+    <div class="contacto-ctas">
+      <a href="mailto:hola@greenledger.io" class="btn-solid">Agendar una demo</a>
+      <a href="#prueba" class="btn-outline">Ver el contrato</a>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <span>© 2026 GreenLedger — Construido sobre Stellar.</span>
+    <div class="links">
+      <a href="#problema">El problema</a>
+      <a href="#funciona">Cómo funciona</a>
+      <a href="#prueba">Prueba en Stellar</a>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
