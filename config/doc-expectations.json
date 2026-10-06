@@ -46,12 +46,6 @@
   },
   "known_issues": [
     {
-      "doc": "ProductBlueprint.md",
-      "claves": ["inesperado:v2-primera-instancia", "faltante:v2-vigente"],
-      "motivo": "La línea 33 cita la primera instancia v2 (reemplazada) como contrato desplegado; el vigente es el alias v2-vigente.",
-      "estado": "reportado; sin editar (pendiente de aprobación del mantenedor)"
-    },
-    {
       "id": "CRED001-duplicado",
       "tipo": "dato",
       "credito": "CRED001",

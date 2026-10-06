@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
-import { VERSION, codificarStrKey, validarContractId, validarSemillaSecreta } from '../scripts/lib/strkey.mjs';
+import { VERSION, codificarStrKey, validarStrKey, validarContractId, validarSemillaSecreta } from '../scripts/lib/strkey.mjs';
 import { extraerIds, buscarSecretos, cargarConfig, analizarTexto, ejecutar } from '../scripts/check-contract-id.mjs';
 
 const RAIZ = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -35,8 +35,21 @@ function repoTemporal(archivos) {
   }
   return dir;
 }
-function conRepo(archivos, fn) {
+/** known_issue de documento (de prueba): ProductBlueprint.md cita la primera instancia en vez del vigente. */
+const KNOWN_ISSUE_DOC = {
+  doc: 'ProductBlueprint.md',
+  claves: ['inesperado:v2-primera-instancia', 'faltante:v2-vigente'],
+  motivo: 'prueba',
+  estado: 'reportado (prueba)',
+};
+function conRepo(archivos, fn, { knownIssuesExtra = [] } = {}) {
   const dir = repoTemporal(archivos);
+  if (knownIssuesExtra.length) {
+    const ruta = join(dir, 'config/doc-expectations.json');
+    const esperados = JSON.parse(readFileSync(ruta, 'utf8'));
+    esperados.known_issues.push(...knownIssuesExtra);
+    writeFileSync(ruta, JSON.stringify(esperados));
+  }
   try {
     return fn(dir);
   } finally {
@@ -148,7 +161,7 @@ test('ejecutar: known_issue → código 0 por defecto y 1 con --strict', () => {
     assert.ok(normal.lineas.some((l) => l.startsWith('  CONOCIDO   ProductBlueprint.md')));
     const estricto = ejecutar({ raiz: dir, strict: true });
     assert.equal(estricto.codigo, 1);
-  });
+  }, { knownIssuesExtra: [KNOWN_ISSUE_DOC] });
 });
 
 test('ejecutar: ID equivocado en un documento → código 1', () => {
@@ -240,7 +253,18 @@ test('known_issue obsoleto produce AVISO sin fallar', () => {
     const r = ejecutar({ raiz: dir });
     assert.ok(r.lineas.some((l) => l.includes('AVISO') && l.includes('obsoleto')));
     assert.equal(r.codigo, 0);
-  });
+  }, { knownIssuesExtra: [KNOWN_ISSUE_DOC] });
+});
+
+test('config real: ya no hay known_issue de ProductBlueprint.md; solo queda el de CRED001', () => {
+  assert.deepEqual(cfg.esperados.known_issues.map((k) => k.id), ['CRED001-duplicado']);
+});
+
+test('registro: propietario de CRED001 en v2 está completo (56 caracteres, checksum válido) y sin nota de abreviado', () => {
+  const v2 = cfg.porAlias.get('v2-vigente').creditos_observados.find((c) => c.id === 'CRED001');
+  assert.match(v2.propietario, /^G[A-Z2-7]{55}$/);
+  assert.equal(validarStrKey(v2.propietario, 6 << 3).ok, true);
+  assert.equal(/abreviad/i.test(JSON.stringify(v2)), false);
 });
 
 test('known_issue de datos: CRED001 duplicado se reporta como CONOCIDO (0 normal, 1 con --strict)', () => {

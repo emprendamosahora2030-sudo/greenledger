@@ -23,11 +23,11 @@
           "estado": "retirado",
           "beneficiario": "EMPRESA_DEMO",
           "proyecto": "PROY001",
-          "propietario": "GC4H6NDQ…LTWM",
+          "propietario": "GC4H6NDQHNTFQFCT3DLBSCORVMILYNSEI6Y7CUBYIG673B25L5AJLTWM",
           "hash_certificado": "531b7ce7a82722c383557357df169dad81b339cc4a577654e257bc9bb935720d",
           "emitido_en": 1790350522,
           "emitido_en_fecha": "2026-09-25",
-          "nota": "Retirado 10 s después de emitido. Propietario abreviado como lo reportó el mantenedor.",
+          "nota": "Retirado 10 s después de emitido.",
           "fecha_verificacion": "2026-10-06",
           "fuente": "verificación del mantenedor (PowerShell + Stellar Expert)"
         }

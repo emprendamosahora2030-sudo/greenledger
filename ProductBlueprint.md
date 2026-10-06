@@ -30,7 +30,7 @@ A diferencia de los registros tradicionales (hojas de cálculo, bases de datos c
 
 ## Alcance del MVP
 
-**Dentro del MVP:** contrato Soroban con ciclo completo (emisión → transferencia → verificación → retiro) y protección anti-doble-conteo — ya desplegado y probado en testnet (Contract ID CDQMOI5XRRMYABQZ6KWXAFMF27C4UBUW4P2I2VA4GCCWSY6A5RYWYU6Y); certificado de tokenización verificable por crédito; consulta pública del historial on-chain vía exploradores de Stellar.
+**Dentro del MVP:** contrato Soroban con ciclo completo (emisión → transferencia → verificación → retiro) y protección anti-doble-conteo — ya desplegado y probado en testnet (Contract ID CANJ564LVB4WBAYJWXRQKHJII456RW6XBWWM2FQCSSC6HLG27JP2A5O2); certificado de tokenización verificable por crédito; consulta pública del historial on-chain vía exploradores de Stellar.
 
 **Fuera del MVP (deseable, no crítico):** interfaz web completa para generadores/compradores no técnicos (hoy la interacción es vía contrato/CLI); integración automatizada con fuentes de datos satelitales de verificación forestal; dashboard analítico con métricas agregadas del mercado; onboarding de múltiples verificadores simultáneos (hoy un solo verificador, TEMIS, como punto de partida).
 
@@ -46,7 +46,7 @@ A diferencia de los registros tradicionales (hojas de cálculo, bases de datos c
 | **Solución** | Tokenización de créditos como activo único en Stellar/Soroban con contrato anti-doble-conteo |
 | **Canales** | Alianzas institucionales (Cercarbono, RIA, Masbosques), Stellar Apex, Ruta N / Viceministerio TIC |
 | **Métricas clave** | Créditos emitidos, transferencias verificadas, intentos de doble-conteo bloqueados, aliados institucionales activos |
-| **Ventaja diferencial** | Contrato ya desplegado y probado on-chain (no es solo propuesta); patrón reutilizable (base de TemisLedger) |
+| **Ventaja diferencial** | Contrato ya desplegado y probado on-chain (no es solo propuesta); patrón reutilizable |
 | **Estructura de costos e ingresos** | Costos: infraestructura testnet/mainnet, verificación de campo. Ingresos: comisión por tokenización/transacción, licenciamiento del patrón a terceros |
 
 Imagen: [`LeanCanvas_GreenLedger.png`](./LeanCanvas_GreenLedger.png)
