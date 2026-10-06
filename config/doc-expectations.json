@@ -1,0 +1,55 @@
+{
+  "_comentario": "Contract ID ESPERADO POR DOCUMENTO (no una variable global). 'permitidos' = alias que ese documento puede mencionar; 'obligatorios' = alias que debe mencionar. Un documento con IDs que no figura aquí es una diferencia. Solo alias: los IDs viven en contracts.json.",
+  "version": 1,
+  "docs": {
+    "README.md": {
+      "permitidos": ["v1", "v2-vigente", "v2-sin-lotes", "v2-primera-instancia"],
+      "obligatorios": ["v2-vigente"]
+    },
+    "ProductBlueprint.md": {
+      "permitidos": ["v2-vigente"],
+      "obligatorios": ["v2-vigente"]
+    },
+    "DEMO.md": {
+      "permitidos": ["ensayo-demo-2026-09-25"],
+      "obligatorios": ["ensayo-demo-2026-09-25"],
+      "lineas_ignoradas": {
+        "93": "Ejemplo de salida esperada ('será otro'); no es un ID real."
+      }
+    },
+    ".env.example": {
+      "permitidos": ["v2-vigente"],
+      "obligatorios": ["v2-vigente"]
+    },
+    "docs/VERIFICACION_CONTRACT_ID.md": {
+      "permitidos": ["v2-vigente", "v2-primera-instancia", "v2-sin-lotes", "v1", "ensayo-demo-2026-09-25"]
+    },
+    "docs/ARQUITECTURA.md": { "permitidos": [] },
+    "contracts/greenledger/src/lib.rs": { "permitidos": [] },
+    "contracts/greenledger/src/test.rs": { "permitidos": [] },
+    "scripts/deploy_testnet.sh": { "permitidos": [] },
+    "scripts/deploy_testnet.ps1": { "permitidos": [] }
+  },
+  "externos": {
+    "certificado-CRED001.html": {
+      "permitidos": ["v1"],
+      "obligatorios": ["v1"],
+      "confirmado_en_cadena": false,
+      "nota": "Se espera v1. Pendiente confirmar en cadena que CRED001 se emitió en v1 (verificar_credito sobre v1 y transacción de emisión)."
+    },
+    "pitch-viernes-v2.html": {
+      "permitidos": ["v2-vigente"],
+      "obligatorios": ["v2-vigente"],
+      "confirmado_en_cadena": true,
+      "nota": "El vigente existe en testnet (485 t emitidas, 100 t retiradas al 2026-10-06)."
+    }
+  },
+  "known_issues": [
+    {
+      "doc": "ProductBlueprint.md",
+      "claves": ["inesperado:v2-primera-instancia", "faltante:v2-vigente"],
+      "motivo": "La línea 33 cita la primera instancia v2 (reemplazada) como contrato desplegado; el vigente es el alias v2-vigente.",
+      "estado": "reportado; sin editar (pendiente de aprobación del mantenedor)"
+    }
+  ]
+}

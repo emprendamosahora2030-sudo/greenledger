@@ -1,0 +1,82 @@
+{
+  "_comentario": "Registro de contratos GreenLedger en Stellar testnet. Solo datos públicos: nunca claves ni secretos. Las lecturas en cadena las hace el mantenedor con stellar-cli en modo solo lectura (--send=no).",
+  "red": "testnet",
+  "contratos": [
+    {
+      "alias": "v2-vigente",
+      "id": "CANJ564LVB4WBAYJWXRQKHJII456RW6XBWWM2FQCSSC6HLG27JP2A5O2",
+      "version": "v2",
+      "estado": "vigente",
+      "interfaz": "v2",
+      "nota": "Historial de propiedad + emisión por lotes.",
+      "observado_en_cadena": {
+        "existe": true,
+        "total_emitido": 485,
+        "total_retirado": 100,
+        "fecha": "2026-10-06",
+        "fuente": "lectura manual del mantenedor (stellar-cli, --send=no)"
+      }
+    },
+    {
+      "alias": "v2-primera-instancia",
+      "id": "CDQMOI5XRRMYABQZ6KWXAFMF27C4UBUW4P2I2VA4GCCWSY6A5RYWYU6Y",
+      "version": "v2",
+      "estado": "reemplazado",
+      "interfaz": "v2",
+      "nota": "Primera instancia v2 (sin historial ni lotes). Se conserva como referencia.",
+      "observado_en_cadena": {
+        "existe": true,
+        "total_emitido": 100,
+        "total_retirado": 100,
+        "fecha": "2026-10-06",
+        "fuente": "lectura manual del mantenedor (stellar-cli, --send=no)"
+      }
+    },
+    {
+      "alias": "v2-sin-lotes",
+      "id": "CDYAQU4BG5WARTWX6CVILBDAWHU52YP4HHRRL2HICTC6725Y4ZNGGCQF",
+      "version": "v2",
+      "estado": "reemplazado",
+      "interfaz": "v2",
+      "nota": "v2 con historial pero sin emisión por lotes. Se conserva como referencia.",
+      "observado_en_cadena": {
+        "existe": true,
+        "total_emitido": 100,
+        "total_retirado": 100,
+        "fecha": "2026-10-06",
+        "fuente": "lectura manual del mantenedor (stellar-cli, --send=no)"
+      }
+    },
+    {
+      "alias": "v1",
+      "id": "CCRM3PZEMJMZLIM5B6SRMNILPDACR4KEHFS6ODBGHDPVOFNPK7B2XSWT",
+      "version": "v1",
+      "estado": "legado",
+      "interfaz": "v1 (distinta de v2)",
+      "funciones_ausentes": ["total_emitido", "total_retirado"],
+      "nota": "No se modifica. Su interfaz difiere de v2: no expone total_emitido ni total_retirado (stellar-cli responde 'unrecognized subcommand'). Los totales de v1 no se pueden leer con esas funciones.",
+      "observado_en_cadena": {
+        "existe": true,
+        "total_emitido": null,
+        "total_retirado": null,
+        "fecha": "2026-10-06",
+        "fuente": "lectura manual del mantenedor (stellar-cli, --send=no)"
+      }
+    },
+    {
+      "alias": "ensayo-demo-2026-09-25",
+      "id": "CB4BRTDLTV5MKRVJBEHUDVGFTEPFA4A3KPDYKZLHYE4DDCT5XS62AEXO",
+      "version": "v2",
+      "estado": "ensayo",
+      "interfaz": "v2",
+      "nota": "Contrato del ensayo verificado de DEMO.md (25-sep-2026).",
+      "observado_en_cadena": {
+        "existe": true,
+        "total_emitido": 160,
+        "total_retirado": 100,
+        "fecha": "2026-10-06",
+        "fuente": "lectura manual del mantenedor (stellar-cli, --send=no)"
+      }
+    }
+  ]
+}
