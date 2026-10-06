@@ -8,7 +8,7 @@
 //
 // El Contract ID esperado sale de config/doc-expectations.json (sección "externos",
 // por nombre de archivo) o de --expect. Códigos de salida: 0 = sin FALLA;
-// 1 = al menos un criterio FALLA; 2 = error de uso o de configuración.
+// 1 = al menos un criterio FALLA (ADVERTENCIA y PENDIENTE no fallan); 2 = error de uso o de configuración.
 
 import { readFileSync, existsSync } from 'node:fs';
 import { basename, resolve, dirname } from 'node:path';
@@ -19,7 +19,7 @@ const RAIZ_POR_DEFECTO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const HOSTS_EXPLORADOR = new Set(['lab.stellar.org', 'stellar.expert']);
 const RE_HASH_TX = /^[0-9a-f]{64}$/;
 
-export const ESTADO = Object.freeze({ PASA: 'PASA', FALLA: 'FALLA', PENDIENTE: 'PENDIENTE', NO_APLICA: 'NO_APLICA' });
+export const ESTADO = Object.freeze({ PASA: 'PASA', FALLA: 'FALLA', ADVERTENCIA: 'ADVERTENCIA', PENDIENTE: 'PENDIENTE', NO_APLICA: 'NO_APLICA' });
 
 // ---------------------------------------------------------------- extracción
 
@@ -58,6 +58,19 @@ export function interpretarEnlace(url) {
 }
 
 // ---------------------------------------------------------------- criterios
+
+/** Activo único: nunca PASA sin red; ADVERTENCIA si el mismo ID de crédito existe en varios contratos. */
+function criterioActivoUnico(cert, cfg) {
+  if (!cert.idCredito) return { estado: ESTADO.FALLA, detalle: 'el certificado no identifica el crédito' };
+  const donde = cfg.creditos?.get(cert.idCredito) ?? [];
+  if (donde.length > 1) {
+    return {
+      estado: ESTADO.ADVERTENCIA,
+      detalle: `ID duplicado entre contratos: ${cert.idCredito} existe en ${donde.join(' y ')} (propietario, estado y hash pueden diferir); no es un activo único a nivel de ID`,
+    };
+  }
+  return { estado: ESTADO.PENDIENTE, detalle: `crédito ${cert.idCredito}: falta verificar_credito en cadena (que exista una sola vez en el contrato)` };
+}
 
 function criterioContractId(html, regla, cfg) {
   if (!regla) {
@@ -109,9 +122,7 @@ export function evaluarCertificado(html, nombreArchivo, cfg, { expect = null } =
     {
       id: 'activo_unico',
       nombre: 'Activo único',
-      ...(cert.idCredito
-        ? { estado: ESTADO.PENDIENTE, detalle: `crédito ${cert.idCredito}: falta verificar_credito en cadena (que exista una sola vez en el contrato)` }
-        : { estado: ESTADO.FALLA, detalle: 'el certificado no identifica el crédito' }),
+      ...criterioActivoUnico(cert, cfg),
     },
     {
       id: 'historial',
@@ -138,7 +149,7 @@ export function evaluarCertificado(html, nombreArchivo, cfg, { expect = null } =
 export function formatear(informe, formato = 'texto') {
   if (formato === 'json') return JSON.stringify(informe, null, 2);
   const r = informe.resumen;
-  const pie = `Resumen: ${r.PASA} PASA, ${r.FALLA} FALLA, ${r.PENDIENTE} PENDIENTE, ${r.NO_APLICA} NO_APLICA`;
+  const pie = `Resumen: ${r.PASA} PASA, ${r.FALLA} FALLA, ${r.ADVERTENCIA} ADVERTENCIA, ${r.PENDIENTE} PENDIENTE, ${r.NO_APLICA} NO_APLICA`;
   if (formato === 'md') {
     const filas = informe.criterios.map((c) => `| ${c.nombre} | **${c.estado}** | ${c.detalle} |`);
     return [`### Certificado ${informe.certificado} (crédito ${informe.credito ?? 'sin identificar'})`, '', '| Criterio | Estado | Detalle |', '|---|---|---|', ...filas, '', pie].join('\n');
@@ -146,7 +157,7 @@ export function formatear(informe, formato = 'texto') {
   const ancho = Math.max(...informe.criterios.map((c) => c.id.length));
   return [
     `Certificado ${informe.certificado} — crédito ${informe.credito ?? 'sin identificar'}`,
-    ...informe.criterios.map((c) => `  ${c.estado.padEnd(9)}  ${c.id.padEnd(ancho)}  ${c.detalle}`),
+    ...informe.criterios.map((c) => `  ${c.estado.padEnd(11)}  ${c.id.padEnd(ancho)}  ${c.detalle}`),
     pie,
   ].join('\n');
 }

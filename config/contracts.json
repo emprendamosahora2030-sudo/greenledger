@@ -15,7 +15,23 @@
         "total_retirado": 100,
         "fecha": "2026-10-06",
         "fuente": "lectura manual del mantenedor (stellar-cli, --send=no)"
-      }
+      },
+      "creditos_observados": [
+        {
+          "id": "CRED001",
+          "confirmado_en_cadena": true,
+          "estado": "retirado",
+          "beneficiario": "EMPRESA_DEMO",
+          "proyecto": "PROY001",
+          "propietario": "GC4H6NDQ…LTWM",
+          "hash_certificado": "531b7ce7a82722c383557357df169dad81b339cc4a577654e257bc9bb935720d",
+          "emitido_en": 1790350522,
+          "emitido_en_fecha": "2026-09-25",
+          "nota": "Retirado 10 s después de emitido. Propietario abreviado como lo reportó el mantenedor.",
+          "fecha_verificacion": "2026-10-06",
+          "fuente": "verificación del mantenedor (PowerShell + Stellar Expert)"
+        }
+      ]
     },
     {
       "alias": "v2-primera-instancia",
@@ -59,9 +75,28 @@
         "existe": true,
         "total_emitido": null,
         "total_retirado": null,
+        "nota_totales": "v1 no tiene total_emitido ni total_retirado; sus totales no se pueden leer.",
         "fecha": "2026-10-06",
         "fuente": "lectura manual del mantenedor (stellar-cli, --send=no)"
-      }
+      },
+      "creditos_observados": [
+        {
+          "id": "CRED001",
+          "confirmado_en_cadena": true,
+          "estado": "emitido",
+          "toneladas": 100,
+          "propietario": "GDMX2ZLH4LSTDVG3O6TQ63PTKQ43JPRQ77M2OYNCJ6JKSL76JCGWII34",
+          "evidencia": {
+            "tx": "949082bbc59dcdd2518c40801c8c3df6011124a862c600b41331271536ecc317",
+            "fecha_tx": "2026-09-24",
+            "ledger": 4844772,
+            "llamada": "emitir_credito(\"CRED001\", GDMX…II34, 100) → true",
+            "enlace": "https://stellar.expert/explorer/testnet/tx/949082bbc59dcdd2518c40801c8c3df6011124a862c600b41331271536ecc317"
+          },
+          "fecha_verificacion": "2026-10-06",
+          "fuente": "verificación del mantenedor (PowerShell + Stellar Expert)"
+        }
+      ]
     },
     {
       "alias": "ensayo-demo-2026-09-25",

@@ -144,7 +144,7 @@ test('ejecutar: known_issue → código 0 por defecto y 1 con --strict', () => {
   conRepo(docs, (dir) => {
     const normal = ejecutar({ raiz: dir });
     assert.equal(normal.codigo, 0, normal.lineas.join('\n'));
-    assert.equal(normal.resumen.conocidos, 2);
+    assert.equal(normal.resumen.conocidos, 3); // 2 de ProductBlueprint + CRED001 duplicado
     assert.ok(normal.lineas.some((l) => l.startsWith('  CONOCIDO   ProductBlueprint.md')));
     const estricto = ejecutar({ raiz: dir, strict: true });
     assert.equal(estricto.codigo, 1);
@@ -198,7 +198,7 @@ test('ejecutar: externos omitidos → 0 por defecto; 1 con --require-external', 
   });
 });
 
-test('ejecutar: externos — CRED001 con v1 pasa y queda marcado como pendiente de cadena', () => {
+test('ejecutar: externos — CRED001 con v1 pasa y queda marcado como confirmado en cadena', () => {
   const ext = mkdtempSync(join(tmpdir(), 'gl-ext-'));
   try {
     writeFileSync(join(ext, 'certificado-CRED001.html'), `<p>${id('v1')}</p>`);
@@ -207,7 +207,7 @@ test('ejecutar: externos — CRED001 con v1 pasa y queda marcado como pendiente 
       const r = ejecutar({ raiz: dir, externalDir: ext, requireExternal: true });
       assert.equal(r.codigo, 0, r.lineas.join('\n'));
       const cred = r.lineas.find((l) => l.includes('certificado-CRED001.html'));
-      assert.match(cred, /confirmado_en_cadena=false/);
+      assert.match(cred, /confirmado_en_cadena=true/);
     });
   } finally {
     rmSync(ext, { recursive: true, force: true });
@@ -241,4 +241,23 @@ test('known_issue obsoleto produce AVISO sin fallar', () => {
     assert.ok(r.lineas.some((l) => l.includes('AVISO') && l.includes('obsoleto')));
     assert.equal(r.codigo, 0);
   });
+});
+
+test('known_issue de datos: CRED001 duplicado se reporta como CONOCIDO (0 normal, 1 con --strict)', () => {
+  conRepo(documentosLimpios(), (dir) => {
+    const r = ejecutar({ raiz: dir });
+    assert.ok(r.lineas.some((l) => l.startsWith('  CONOCIDO   CRED001 en') && l.includes('decisión pendiente del CEO')));
+    assert.equal(r.codigo, 0);
+    assert.equal(ejecutar({ raiz: dir, strict: true }).codigo, 1);
+  });
+});
+
+test('registro: CRED001 confirmado en v1 con tx como evidencia; existe también en v2 retirado', () => {
+  const v1 = cfg.porAlias.get('v1').creditos_observados.find((c) => c.id === 'CRED001');
+  assert.equal(v1.confirmado_en_cadena, true);
+  assert.match(v1.evidencia.tx, /^[0-9a-f]{64}$/);
+  assert.equal(v1.toneladas, 100);
+  const v2 = cfg.porAlias.get('v2-vigente').creditos_observados.find((c) => c.id === 'CRED001');
+  assert.equal(v2.estado, 'retirado');
+  assert.deepEqual(cfg.creditos.get('CRED001').sort(), ['v1', 'v2-vigente']);
 });

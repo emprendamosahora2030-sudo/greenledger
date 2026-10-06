@@ -59,15 +59,31 @@ test('interpretarEnlace: detecta http, mainnet y hash inválido', () => {
   assert.ok(interpretarEnlace('https://stellar.expert/explorer/testnet/tx/zz').problemas.some((p) => p.includes('hash')));
 });
 
-test('CRED001 con v1: Contract ID PENDIENTE (confirmado_en_cadena=false), enlaces PASA', () => {
+test('CRED001 con v1: Activo único ADVERTENCIA (ID duplicado), Contract ID PASA (confirmado en cadena)', () => {
   const e = estados(evaluar(certificado()));
   assert.deepEqual(e, {
-    activo_unico: ESTADO.PENDIENTE,
+    activo_unico: ESTADO.ADVERTENCIA,
     historial: ESTADO.PENDIENTE,
     retiro: ESTADO.NO_APLICA,
     enlace_verificacion_publica: ESTADO.PASA,
-    contract_id_correcto: ESTADO.PENDIENTE,
+    contract_id_correcto: ESTADO.PASA,
   });
+  const detalle = evaluar(certificado()).criterios[0].detalle;
+  assert.match(detalle, /duplicado/);
+});
+
+test('crédito sin duplicado en el registro → Activo único PENDIENTE; con duplicado → ADVERTENCIA, nunca PASA', () => {
+  assert.equal(estados(evaluar(certificado({ credito: 'CRED777' }), 'certificado-CRED777.html', { expect: ['v1'] })).activo_unico, ESTADO.PENDIENTE);
+  for (const nombre of ['certificado-CRED001.html']) {
+    assert.notEqual(estados(evaluar(certificado(), nombre)).activo_unico, ESTADO.PASA);
+  }
+});
+
+test('contract_id_correcto: PENDIENTE si el externo no está confirmado en cadena', () => {
+  const cfgSinConfirmar = structuredClone(cfg);
+  cfgSinConfirmar.esperados.externos['certificado-CRED001.html'].confirmado_en_cadena = false;
+  const inf = evaluarCertificado(certificado(), 'certificado-CRED001.html', cfgSinConfirmar);
+  assert.equal(estados(inf).contract_id_correcto, ESTADO.PENDIENTE);
 });
 
 test('Contract ID de otro contrato → FALLA', () => {
@@ -117,8 +133,8 @@ test('nunca marca PASA lo que requiere la cadena', () => {
 
 test('formatear: texto, md y json', () => {
   const inf = evaluar(certificado());
-  assert.match(formatear(inf, 'texto'), /PENDIENTE\s+contract_id_correcto/);
-  assert.match(formatear(inf, 'md'), /\| Contract ID correcto \| \*\*PENDIENTE\*\*/);
+  assert.match(formatear(inf, 'texto'), /ADVERTENCIA\s+activo_unico/);
+  assert.match(formatear(inf, 'md'), /\| Activo único \| \*\*ADVERTENCIA\*\*/);
   assert.equal(JSON.parse(formatear(inf, 'json')).criterios.length, 5);
 });
 
@@ -129,7 +145,7 @@ test('ejecutar: código 0 sin FALLA, 1 con FALLA, 2 por uso', () => {
     const malo = join(dir, 'certificado-CRED001-malo.html');
     writeFileSync(bueno, certificado());
     writeFileSync(malo, certificado({ contrato: id('v2-vigente') }));
-    assert.equal(ejecutar({ archivo: bueno }).codigo, 0);
+    assert.equal(ejecutar({ archivo: bueno }).codigo, 0); // ADVERTENCIA y PENDIENTE no fallan
     assert.equal(ejecutar({ archivo: malo, expect: ['v1'] }).codigo, 1);
     assert.equal(ejecutar({ archivo: join(dir, 'no-existe.html') }).codigo, 2);
     assert.equal(ejecutar({ archivo: bueno, formato: 'xml' }).codigo, 2);

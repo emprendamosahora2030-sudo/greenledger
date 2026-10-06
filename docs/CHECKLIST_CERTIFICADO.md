@@ -1,6 +1,6 @@
 # Lista de verificación por certificado
 
-Cada certificado GreenLedger se revisa con 5 criterios. El estado de cada uno es **PASA**, **FALLA**, **PENDIENTE** (falta una comprobación que requiere la cadena) o **NO_APLICA**. Lo que necesita la cadena nunca se marca PASA sin haberla consultado.
+Cada certificado GreenLedger se revisa con 5 criterios. El estado de cada uno es **PASA**, **FALLA**, **ADVERTENCIA** (hay un problema que debe decidir una persona, p. ej. el mismo ID de crédito en varios contratos), **PENDIENTE** (falta una comprobación que requiere la cadena) o **NO_APLICA**. Lo que necesita la cadena nunca se marca PASA sin haberla consultado.
 
 ```bash
 node scripts/checklist-certificado.mjs <certificado.html>                 # texto
@@ -10,13 +10,13 @@ node scripts/checklist-certificado.mjs <otro.html> --expect v2-vigente    # sin 
 node --test "tests/*.test.mjs"                                            # pruebas (sin red)
 ```
 
-Salida: `0` sin FALLA · `1` al menos una FALLA · `2` error de uso o de configuración. PENDIENTE no hace fallar.
+Salida: `0` sin FALLA · `1` al menos una FALLA · `2` error de uso o de configuración. ADVERTENCIA y PENDIENTE no hacen fallar.
 
 ## Criterios
 
 | Criterio | Qué comprueba | Sin red |
 |---|---|---|
-| `activo_unico` | El crédito existe una sola vez en el contrato (`verificar_credito`) | PENDIENTE (FALLA si el certificado no identifica el crédito) |
+| `activo_unico` | El crédito existe una sola vez en el contrato (`verificar_credito`) | ADVERTENCIA si el ID existe en varios contratos del registro (`creditos_observados`); si no, PENDIENTE; FALLA si el certificado no identifica el crédito |
 | `historial` | Emisión y transferencias coinciden con `historial_credito` | PENDIENTE |
 | `retiro` | Si el certificado declara el crédito retirado, que la cadena lo confirme | PENDIENTE si lo declara; NO_APLICA si no |
 | `enlace_verificacion_publica` | Hay enlace al contrato y a la transacción de emisión; host `lab.stellar.org` o `stellar.expert`, `https`, red `testnet`, hash de 64 hex, y el ID del enlace es el del certificado | PASA o FALLA por formato. **Que el enlace abra no se prueba sin red** |

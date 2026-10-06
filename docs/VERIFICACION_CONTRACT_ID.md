@@ -22,7 +22,9 @@ Lectura en cadena del 2026-10-06 (solo lectura, `stellar-cli --send=no`, hecha p
 
 ### Certificado CRED001
 
-El certificado CRED001 se espera en **v1**. Esa asociación **no está confirmada en cadena todavía**: en `config/doc-expectations.json` figura con `confirmado_en_cadena: false` hasta verificar `verificar_credito` sobre v1 y la transacción de emisión. Mientras tanto el chequeo lo marca como pendiente, no como correcto.
+El certificado CRED001 cita **v1**, y eso está **confirmado en cadena** (2026-10-06): CRED001 existe en v1, emitido, 100 t, con la transacción de emisión `949082bb…` (ledger 4844772, 2026-09-24). La evidencia está en `creditos_observados` de `config/contracts.json`.
+
+**Problema conocido — CRED001 duplicado.** El mismo ID `CRED001` también existe en v2 (`v2-vigente`) con otros datos: estado retirado, otro propietario, otro hash de certificado y emitido el 2026-09-25. Está registrado en `known_issues` como *reportado, decisión pendiente del CEO*. El checklist marca "Activo único" de CRED001 como ADVERTENCIA, nunca como PASA.
 
 ## Verificar
 

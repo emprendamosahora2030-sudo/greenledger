@@ -73,6 +73,15 @@ export function cargarConfig(raiz) {
     porId.set(c.id, c);
   }
 
+  // Créditos observados en cadena: id de crédito -> alias de los contratos donde existe.
+  const creditos = new Map();
+  for (const c of registro.contratos ?? []) {
+    for (const cr of c.creditos_observados ?? []) {
+      if (!creditos.has(cr.id)) creditos.set(cr.id, []);
+      creditos.get(cr.id).push(c.alias);
+    }
+  }
+
   const vigentes = (registro.contratos ?? []).filter((c) => c.estado === 'vigente');
   if (vigentes.length !== 1) {
     errores.push(`debe haber exactamente 1 contrato 'vigente' (hay ${vigentes.length})`);
@@ -85,7 +94,7 @@ export function cargarConfig(raiz) {
     }
   }
 
-  return { registro, esperados, porAlias, porId, vigente: vigentes[0], errores };
+  return { registro, esperados, porAlias, porId, creditos, vigente: vigentes[0], errores };
 }
 
 // ----------------------------------------------------------------- análisis
@@ -177,7 +186,12 @@ export function ejecutar({ raiz = RAIZ_POR_DEFECTO, externalDir = null, strict =
   }
 
   const conocidas = new Map();
+  const datosConocidos = [];
   for (const k of cfg.esperados.known_issues ?? []) {
+    if (k.tipo === 'dato') {
+      datosConocidos.push(k);
+      continue;
+    }
     for (const clave of k.claves) conocidas.set(`${k.doc}|${clave}`, k);
   }
   const conocidasUsadas = new Set();
@@ -269,6 +283,19 @@ export function ejecutar({ raiz = RAIZ_POR_DEFECTO, externalDir = null, strict =
     const analisis = analizarTexto(readFileSync(ruta, 'utf8'), regla, cfg);
     reportar(nombre, analisis, `  ${conf}`);
   }
+
+  // --- Problemas conocidos de datos (no son IDs en documentos): p. ej. un crédito duplicado entre contratos
+  salida.push('[DATOS]');
+  for (const k of datosConocidos) {
+    const donde = cfg.creditos.get(k.credito) ?? [];
+    if (donde.length > 1) {
+      resumen.conocidos++;
+      salida.push(`  CONOCIDO   ${k.credito} en ${donde.join(' y ')}  ${k.motivo} — ${k.estado}`);
+    } else {
+      salida.push(`  AVISO      known_issue de datos obsoleto (${k.id}): ${k.credito} ya no figura en más de un contrato de ${ARCHIVO_REGISTRO}`);
+    }
+  }
+  if (!datosConocidos.length) salida.push('  (sin problemas de datos conocidos)');
 
   for (const [clave, k] of conocidas) {
     if (!conocidasUsadas.has(clave)) {
