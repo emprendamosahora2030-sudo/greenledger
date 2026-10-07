@@ -88,7 +88,7 @@ test('configuración: 5 contratos, 1 vigente, sin errores, v1 documenta su inter
 });
 
 test('configuración: los externos registrados son solo los aprobados', () => {
-  assert.deepEqual(Object.keys(cfg.esperados.externos).sort(), ['certificado-CRED001.html', 'pitch-viernes-v2.html']);
+  assert.deepEqual(Object.keys(cfg.esperados.externos).sort(), ['certificado-CRED001-v2.html', 'pitch-viernes-v2.html']);
 });
 
 test('extraerIds: encuentra IDs, línea y validez', () => {
@@ -157,7 +157,7 @@ test('ejecutar: known_issue → código 0 por defecto y 1 con --strict', () => {
   conRepo(docs, (dir) => {
     const normal = ejecutar({ raiz: dir });
     assert.equal(normal.codigo, 0, normal.lineas.join('\n'));
-    assert.equal(normal.resumen.conocidos, 3); // 2 de ProductBlueprint + CRED001 duplicado
+    assert.equal(normal.resumen.conocidos, 2); // las 2 claves del known_issue inyectado
     assert.ok(normal.lineas.some((l) => l.startsWith('  CONOCIDO   ProductBlueprint.md')));
     const estricto = ejecutar({ raiz: dir, strict: true });
     assert.equal(estricto.codigo, 1);
@@ -211,15 +211,15 @@ test('ejecutar: externos omitidos → 0 por defecto; 1 con --require-external', 
   });
 });
 
-test('ejecutar: externos — CRED001 con v1 pasa y queda marcado como confirmado en cadena', () => {
+test('ejecutar: externos — certificado CRED001 con v2 pasa y queda marcado como confirmado en cadena', () => {
   const ext = mkdtempSync(join(tmpdir(), 'gl-ext-'));
   try {
-    writeFileSync(join(ext, 'certificado-CRED001.html'), `<p>${id('v1')}</p>`);
+    writeFileSync(join(ext, 'certificado-CRED001-v2.html'), `<p>${id('v2-vigente')}</p>`);
     writeFileSync(join(ext, 'pitch-viernes-v2.html'), `<p>${id('v2-vigente')}</p>`);
     conRepo(documentosLimpios(), (dir) => {
       const r = ejecutar({ raiz: dir, externalDir: ext, requireExternal: true });
       assert.equal(r.codigo, 0, r.lineas.join('\n'));
-      const cred = r.lineas.find((l) => l.includes('certificado-CRED001.html'));
+      const cred = r.lineas.find((l) => l.includes('certificado-CRED001-v2.html'));
       assert.match(cred, /confirmado_en_cadena=true/);
     });
   } finally {
@@ -230,7 +230,7 @@ test('ejecutar: externos — CRED001 con v1 pasa y queda marcado como confirmado
 test('ejecutar: externos — certificado con el ID de otro alias → código 1', () => {
   const ext = mkdtempSync(join(tmpdir(), 'gl-ext-'));
   try {
-    writeFileSync(join(ext, 'certificado-CRED001.html'), `<p>${id('v2-vigente')}</p>`);
+    writeFileSync(join(ext, 'certificado-CRED001-v2.html'), `<p>${id('v1')}</p>`);
     conRepo(documentosLimpios(), (dir) => {
       assert.equal(ejecutar({ raiz: dir, externalDir: ext }).codigo, 1);
     });
@@ -256,8 +256,14 @@ test('known_issue obsoleto produce AVISO sin fallar', () => {
   }, { knownIssuesExtra: [KNOWN_ISSUE_DOC] });
 });
 
-test('config real: ya no hay known_issue de ProductBlueprint.md; solo queda el de CRED001', () => {
-  assert.deepEqual(cfg.esperados.known_issues.map((k) => k.id), ['CRED001-duplicado']);
+test('config real: no hay known_issues abiertos (CRED001 no es un known_issue: el certificado oficial apunta a v2)', () => {
+  assert.deepEqual(cfg.esperados.known_issues, []);
+});
+
+test('config real: --strict sale 0 cuando no hay known_issues', () => {
+  conRepo(documentosLimpios(), (dir) => {
+    assert.equal(ejecutar({ raiz: dir, strict: true }).codigo, 0);
+  });
 });
 
 test('registro: propietario de CRED001 en v2 está completo (56 caracteres, checksum válido) y sin nota de abreviado', () => {
@@ -267,13 +273,14 @@ test('registro: propietario de CRED001 en v2 está completo (56 caracteres, chec
   assert.equal(/abreviad/i.test(JSON.stringify(v2)), false);
 });
 
-test('known_issue de datos: CRED001 duplicado se reporta como CONOCIDO (0 normal, 1 con --strict)', () => {
+test('known_issue de datos (inyectado): crédito en 2 contratos se reporta como CONOCIDO (0 normal, 1 con --strict)', () => {
+  const dato = { id: 'dup-prueba', tipo: 'dato', credito: 'CRED001', motivo: 'duplicado (prueba)', estado: 'reportado (prueba)' };
   conRepo(documentosLimpios(), (dir) => {
     const r = ejecutar({ raiz: dir });
-    assert.ok(r.lineas.some((l) => l.startsWith('  CONOCIDO   CRED001 en') && l.includes('decisión pendiente del CEO')));
+    assert.ok(r.lineas.some((l) => l.startsWith('  CONOCIDO   CRED001 en') && l.includes('reportado (prueba)')));
     assert.equal(r.codigo, 0);
     assert.equal(ejecutar({ raiz: dir, strict: true }).codigo, 1);
-  });
+  }, { knownIssuesExtra: [dato] });
 });
 
 test('registro: CRED001 confirmado en v1 con tx como evidencia; existe también en v2 retirado', () => {
@@ -281,6 +288,7 @@ test('registro: CRED001 confirmado en v1 con tx como evidencia; existe también 
   assert.equal(v1.confirmado_en_cadena, true);
   assert.match(v1.evidencia.tx, /^[0-9a-f]{64}$/);
   assert.equal(v1.toneladas, 100);
+  assert.equal(v1.alcance, 'solo emisión'); // registro histórico: el ciclo completo está en v2
   const v2 = cfg.porAlias.get('v2-vigente').creditos_observados.find((c) => c.id === 'CRED001');
   assert.equal(v2.estado, 'retirado');
   assert.deepEqual(cfg.creditos.get('CRED001').sort(), ['v1', 'v2-vigente']);
@@ -308,10 +316,23 @@ test('registro: historial de CRED001 en v2 — 3 eventos coherentes con la caden
   assert.equal(new Set(ev.map((e) => e.tx)).size, 3);
 });
 
-test('registro: solo el retiro está verificado en Stellar Expert; emisión y transferencia quedan por confirmar', () => {
+test('registro: las 3 tx están verificadas; emisión y transferencia con Horizon (función decodificada), retiro con Stellar Expert', () => {
   const ev = cfg.porAlias.get('v2-vigente').creditos_observados.find((c) => c.id === 'CRED001').historial.eventos;
-  assert.deepEqual(ev.map((e) => e.tx_confirmada_en_stellar_expert), [false, false, true]);
-  assert.match(ev[0].estado_evidencia, /por confirmar en Stellar Expert/);
-  assert.match(ev[1].estado_evidencia, /por confirmar en Stellar Expert/);
+  assert.deepEqual(ev.map((e) => e.verificada_en_cadena), [true, true, true]);
+  assert.deepEqual(ev.map((e) => e.funcion), ['emitir_credito', 'transferir_credito', 'retirar_credito']);
+  assert.deepEqual(ev.map((e) => e.verificada_con), ['Horizon', 'Horizon', 'Stellar Expert']);
+  const horizon = 'verificada en cadena (Horizon, 2026-10-06; función y parámetros decodificados)';
+  assert.equal(ev[0].estado_evidencia, horizon);
+  assert.equal(ev[1].estado_evidencia, horizon);
   assert.match(ev[2].estado_evidencia, /verificada en Stellar Expert/);
+  assert.equal(JSON.stringify(ev).includes('por confirmar'), false);
+});
+
+test('registro: la emisión de CRED001 en v2 lleva hash_certificado y proyecto PROY001', () => {
+  const v2 = cfg.porAlias.get('v2-vigente').creditos_observados.find((c) => c.id === 'CRED001');
+  const emision = v2.historial.eventos[0];
+  assert.equal(emision.hash_certificado, '531b7ce7a82722c383557357df169dad81b339cc4a577654e257bc9bb935720d');
+  assert.equal(emision.hash_certificado, v2.hash_certificado);
+  assert.equal(emision.proyecto, 'PROY001');
+  assert.equal(emision.proyecto, v2.proyecto);
 });

@@ -31,11 +31,11 @@
     "scripts/deploy_testnet.ps1": { "permitidos": [] }
   },
   "externos": {
-    "certificado-CRED001.html": {
-      "permitidos": ["v1"],
-      "obligatorios": ["v1"],
+    "certificado-CRED001-v2.html": {
+      "permitidos": ["v2-vigente"],
+      "obligatorios": ["v2-vigente"],
       "confirmado_en_cadena": true,
-      "nota": "CRED001 existe en v1 (emitido, 100 t); confirmado el 2026-10-06 con la tx de emisión 949082bb… (ver creditos_observados en contracts.json). OJO: CRED001 también existe en v2 con otros datos (ver known_issues)."
+      "nota": "Certificado oficial de CRED001: apunta a v2 (ciclo completo: emisión, transferencia y retiro verificados en cadena). CRED001 también existe en v1 solo con su emisión (tx 949082bb…, ledger 4844772): registro histórico, no es el esperado. Ver creditos_observados en contracts.json."
     },
     "pitch-viernes-v2.html": {
       "permitidos": ["v2-vigente"],
@@ -44,13 +44,5 @@
       "nota": "El vigente existe en testnet (485 t emitidas, 100 t retiradas al 2026-10-06)."
     }
   },
-  "known_issues": [
-    {
-      "id": "CRED001-duplicado",
-      "tipo": "dato",
-      "credito": "CRED001",
-      "motivo": "CRED001 duplicado en v1 y v2 (propietario, estado y hash distintos)",
-      "estado": "reportado, decisión pendiente del CEO"
-    }
-  ]
+  "known_issues": []
 }

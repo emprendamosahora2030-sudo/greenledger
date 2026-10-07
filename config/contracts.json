@@ -33,21 +33,29 @@
             "eventos": [
               {
                 "tipo": "emision",
+                "funcion": "emitir_credito",
                 "ledger": 4865387,
                 "fecha_utc": "2026-09-25T15:35:22Z",
                 "tx": "f44c5d29996505cee9617830556c071a79c426355a8dc570e42370739df10085",
                 "propietario": "GDUUFHKPZJDBLPEJJWMTFVGVGDXCHE3HLB7OPHJLQQ562IV6TE66D7PZ",
-                "tx_confirmada_en_stellar_expert": false,
-                "estado_evidencia": "tx por confirmar en Stellar Expert"
+                "hash_certificado": "531b7ce7a82722c383557357df169dad81b339cc4a577654e257bc9bb935720d",
+                "proyecto": "PROY001",
+                "verificada_en_cadena": true,
+                "verificada_con": "Horizon",
+                "fecha_verificacion": "2026-10-06",
+                "estado_evidencia": "verificada en cadena (Horizon, 2026-10-06; función y parámetros decodificados)"
               },
               {
                 "tipo": "transferencia",
+                "funcion": "transferir_credito",
                 "ledger": 4865388,
                 "fecha_utc": "2026-09-25T15:35:27Z",
                 "tx": "46b390088672549155d0dd8fb0348031824bdcdb9b9fc6b73838c1a299538e53",
                 "a": "GC4H6NDQHNTFQFCT3DLBSCORVMILYNSEI6Y7CUBYIG673B25L5AJLTWM",
-                "tx_confirmada_en_stellar_expert": false,
-                "estado_evidencia": "tx por confirmar en Stellar Expert"
+                "verificada_en_cadena": true,
+                "verificada_con": "Horizon",
+                "fecha_verificacion": "2026-10-06",
+                "estado_evidencia": "verificada en cadena (Horizon, 2026-10-06; función y parámetros decodificados)"
               },
               {
                 "tipo": "retiro",
@@ -56,7 +64,8 @@
                 "ledger": 4865389,
                 "fecha_utc": "2026-09-25T15:35:32Z",
                 "tx": "2b0c25f20d583f0cdf78d786ff69723ac95cb42ab311e18276a05fe233d7d6cb",
-                "tx_confirmada_en_stellar_expert": true,
+                "verificada_en_cadena": true,
+                "verificada_con": "Stellar Expert",
                 "estado_evidencia": "tx verificada en Stellar Expert"
               }
             ]
@@ -117,6 +126,8 @@
           "id": "CRED001",
           "confirmado_en_cadena": true,
           "estado": "emitido",
+          "alcance": "solo emisión",
+          "nota": "Registro histórico: en v1 solo consta la emisión. El ciclo completo está en v2 y el certificado oficial apunta a v2.",
           "toneladas": 100,
           "propietario": "GDMX2ZLH4LSTDVG3O6TQ63PTKQ43JPRQ77M2OYNCJ6JKSL76JCGWII34",
           "evidencia": {

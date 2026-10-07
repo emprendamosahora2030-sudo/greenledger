@@ -30,10 +30,11 @@ export function leerCertificado(html, nombreArchivo = '') {
     return m ? m[1].trim() : null;
   };
   const idCampo = campo('ID del crédito');
-  const idArchivo = nombreArchivo.match(/^certificado-(.+)\.html$/i)?.[1] ?? null;
+  const idArchivo = nombreArchivo.match(/^certificado-(.+?)(?:-v\d+)?\.html$/i)?.[1] ?? null;
   const enlaces = [...html.matchAll(/href\s*=\s*"([^"]+)"/gi)].map((m) => m[1]);
   // Declara retiro solo si lo dice de forma explícita (estado/leyenda), no por mencionar "retiro" en general.
-  const retirado = /data-estado\s*=\s*"retirad[oa]"|estado\s*:\s*retirad[oa]|ha\s+retirado\s+del\s+mercado|fue\s+retirad[oa]/i.test(html);
+  const estadoFinal = campo('Estado final');
+  const retirado = /^retirad[oa]/i.test(estadoFinal ?? '') || /data-estado\s*=\s*"retirad[oa]"|estado\s*:\s*retirad[oa]|ha\s+retirado\s+del\s+mercado|fue\s+retirad[oa]/i.test(html);
   return { idCredito: idCampo || idArchivo, idCampo, enlaces, retirado };
 }
 

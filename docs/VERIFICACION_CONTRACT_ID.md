@@ -22,9 +22,16 @@ Lectura en cadena del 2026-10-06 (solo lectura, `stellar-cli --send=no`, hecha p
 
 ### Certificado CRED001
 
-El certificado CRED001 cita **v1**, y eso está **confirmado en cadena** (2026-10-06): CRED001 existe en v1, emitido, 100 t, con la transacción de emisión `949082bb…` (ledger 4844772, 2026-09-24). La evidencia está en `creditos_observados` de `config/contracts.json`.
+El certificado oficial de CRED001 (`certificado-CRED001-v2.html`) apunta a **v2** (`v2-vigente`), y eso está **confirmado en cadena**. El ID `CRED001` existe en dos contratos, cada uno con un alcance distinto:
 
-**Problema conocido — CRED001 duplicado.** El mismo ID `CRED001` también existe en v2 (`v2-vigente`) con otros datos: estado retirado, otro propietario, otro hash de certificado y emitido el 2026-09-25. Está registrado en `known_issues` como *reportado, decisión pendiente del CEO*. El checklist marca "Activo único" de CRED001 como ADVERTENCIA, nunca como PASA.
+| Contrato | Qué consta de CRED001 | Evidencia |
+|---|---|---|
+| `v2-vigente` | **Ciclo completo**: emisión, transferencia y retiro (retirado, beneficiario `EMPRESA_DEMO`, proyecto `PROY001`) | 3 transacciones; emisión y transferencia verificadas en cadena con Horizon (función y parámetros decodificados, 2026-10-06), retiro verificado en Stellar Expert |
+| `v1` | **Solo la emisión** (100 t) | tx `949082bb…`, ledger 4844772, 2026-09-24 |
+
+La emisión en v1 es un **registro histórico**, no el contrato esperado para el certificado. **No es un known_issue abierto**: `known_issues` está vacío. Todo el detalle (transacciones, ledgers, hash del certificado) está en `creditos_observados` de `config/contracts.json`.
+
+Como el mismo ID existe en dos contratos, el checklist marca el criterio "Activo único" de CRED001 como **ADVERTENCIA**, nunca como PASA (ver `docs/CHECKLIST_CERTIFICADO.md`).
 
 ## Verificar
 
