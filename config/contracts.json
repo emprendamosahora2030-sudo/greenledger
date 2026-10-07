@@ -28,6 +28,39 @@
           "emitido_en": 1790350522,
           "emitido_en_fecha": "2026-09-25",
           "nota": "Retirado 10 s después de emitido.",
+          "historial": {
+            "fuente": "historial_credito (3 eventos), verificado por el mantenedor",
+            "eventos": [
+              {
+                "tipo": "emision",
+                "ledger": 4865387,
+                "fecha_utc": "2026-09-25T15:35:22Z",
+                "tx": "f44c5d29996505cee9617830556c071a79c426355a8dc570e42370739df10085",
+                "propietario": "GDUUFHKPZJDBLPEJJWMTFVGVGDXCHE3HLB7OPHJLQQ562IV6TE66D7PZ",
+                "tx_confirmada_en_stellar_expert": false,
+                "estado_evidencia": "tx por confirmar en Stellar Expert"
+              },
+              {
+                "tipo": "transferencia",
+                "ledger": 4865388,
+                "fecha_utc": "2026-09-25T15:35:27Z",
+                "tx": "46b390088672549155d0dd8fb0348031824bdcdb9b9fc6b73838c1a299538e53",
+                "a": "GC4H6NDQHNTFQFCT3DLBSCORVMILYNSEI6Y7CUBYIG673B25L5AJLTWM",
+                "tx_confirmada_en_stellar_expert": false,
+                "estado_evidencia": "tx por confirmar en Stellar Expert"
+              },
+              {
+                "tipo": "retiro",
+                "funcion": "retirar_credito",
+                "beneficiario": "EMPRESA_DEMO",
+                "ledger": 4865389,
+                "fecha_utc": "2026-09-25T15:35:32Z",
+                "tx": "2b0c25f20d583f0cdf78d786ff69723ac95cb42ab311e18276a05fe233d7d6cb",
+                "tx_confirmada_en_stellar_expert": true,
+                "estado_evidencia": "tx verificada en Stellar Expert"
+              }
+            ]
+          },
           "fecha_verificacion": "2026-10-06",
           "fuente": "verificación del mantenedor (PowerShell + Stellar Expert)"
         }

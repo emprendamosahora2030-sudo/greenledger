@@ -285,3 +285,33 @@ test('registro: CRED001 confirmado en v1 con tx como evidencia; existe también 
   assert.equal(v2.estado, 'retirado');
   assert.deepEqual(cfg.creditos.get('CRED001').sort(), ['v1', 'v2-vigente']);
 });
+
+test('registro: historial de CRED001 en v2 — 3 eventos coherentes con la cadena reportada', () => {
+  const v2 = cfg.porAlias.get('v2-vigente').creditos_observados.find((c) => c.id === 'CRED001');
+  const ev = v2.historial.eventos;
+  assert.deepEqual(ev.map((e) => e.tipo), ['emision', 'transferencia', 'retiro']);
+  // ledgers consecutivos y fechas crecientes
+  assert.deepEqual(ev.map((e) => e.ledger), [4865387, 4865388, 4865389]);
+  const t = ev.map((e) => Date.parse(e.fecha_utc) / 1000);
+  assert.deepEqual(t.map((x, i) => (i ? x - t[i - 1] : 0)), [0, 5, 5]);
+  // la emisión coincide con emitido_en y el retiro ocurre 10 s después
+  assert.equal(t[0], v2.emitido_en);
+  assert.equal(t[2] - t[0], 10);
+  // hashes y direcciones válidos
+  for (const e of ev) assert.match(e.tx, /^[0-9a-f]{64}$/);
+  for (const g of [ev[0].propietario, ev[1].a]) assert.equal(validarStrKey(g, 6 << 3).ok, true);
+  // el destino de la transferencia es el propietario actual; retiro con beneficiario
+  assert.equal(ev[1].a, v2.propietario);
+  assert.equal(ev[2].funcion, 'retirar_credito');
+  assert.equal(ev[2].beneficiario, v2.beneficiario);
+  // tx distintas entre sí
+  assert.equal(new Set(ev.map((e) => e.tx)).size, 3);
+});
+
+test('registro: solo el retiro está verificado en Stellar Expert; emisión y transferencia quedan por confirmar', () => {
+  const ev = cfg.porAlias.get('v2-vigente').creditos_observados.find((c) => c.id === 'CRED001').historial.eventos;
+  assert.deepEqual(ev.map((e) => e.tx_confirmada_en_stellar_expert), [false, false, true]);
+  assert.match(ev[0].estado_evidencia, /por confirmar en Stellar Expert/);
+  assert.match(ev[1].estado_evidencia, /por confirmar en Stellar Expert/);
+  assert.match(ev[2].estado_evidencia, /verificada en Stellar Expert/);
+});
