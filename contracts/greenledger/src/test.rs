@@ -718,3 +718,138 @@ fn lote_acepta_el_maximo_y_rechaza_uno_mas() {
         1
     );
 }
+
+// ---------------------------------------------------------------------
+// Cambio de admin en dos pasos
+// ---------------------------------------------------------------------
+
+fn hay_admin_pendiente(ctx: &Contexto) -> bool {
+    ctx.env.as_contract(&ctx.client.address, || {
+        ctx.env.storage().instance().has(&DataKey::AdminPendiente)
+    })
+}
+
+#[test]
+fn proponer_no_cambia_admin_hasta_aceptar() {
+    let ctx = setup();
+    let nuevo = Address::generate(&ctx.env);
+
+    ctx.client.proponer_admin(&nuevo);
+
+    assert!(hay_admin_pendiente(&ctx));
+    // Todavía manda el admin viejo: puede seguir agregando verificadores.
+    let v = Address::generate(&ctx.env);
+    ctx.client.agregar_verificador(&v);
+    let auths = ctx.env.auths();
+    assert_eq!(auths.last().unwrap().0, ctx.admin);
+}
+
+#[test]
+fn aceptar_admin_transfiere_permisos_y_limpia_pendiente() {
+    let ctx = setup();
+    let nuevo = Address::generate(&ctx.env);
+
+    ctx.client.proponer_admin(&nuevo);
+    ctx.client.aceptar_admin();
+
+    assert!(!hay_admin_pendiente(&ctx));
+
+    // El admin nuevo gana permisos: la firma exigida es la suya.
+    let v = Address::generate(&ctx.env);
+    ctx.client.agregar_verificador(&v);
+    assert_eq!(ctx.env.auths().last().unwrap().0, nuevo);
+
+    // Y no queda nada que aceptar una segunda vez.
+    assert_eq!(
+        ctx.client.try_aceptar_admin(),
+        Err(Ok(Error::SinAdminPendiente))
+    );
+}
+
+#[test]
+fn admin_viejo_pierde_permisos_tras_aceptar() {
+    let ctx = setup();
+    let nuevo = Address::generate(&ctx.env);
+    let v = Address::generate(&ctx.env);
+
+    ctx.client.proponer_admin(&nuevo);
+    ctx.client.aceptar_admin();
+
+    // Solo el admin viejo firma: debe fallar porque ya no es admin.
+    ctx.env.mock_auths(&[MockAuth {
+        address: &ctx.admin,
+        invoke: &MockAuthInvoke {
+            contract: &ctx.client.address,
+            fn_name: "agregar_verificador",
+            args: (v.clone(),).into_val(&ctx.env),
+            sub_invokes: &[],
+        },
+    }]);
+    assert!(ctx.client.try_agregar_verificador(&v).is_err());
+}
+
+#[test]
+fn tercero_no_puede_proponer_admin() {
+    let ctx = setup();
+    let intruso = Address::generate(&ctx.env);
+    let candidato = Address::generate(&ctx.env);
+
+    ctx.env.mock_auths(&[MockAuth {
+        address: &intruso,
+        invoke: &MockAuthInvoke {
+            contract: &ctx.client.address,
+            fn_name: "proponer_admin",
+            args: (candidato.clone(),).into_val(&ctx.env),
+            sub_invokes: &[],
+        },
+    }]);
+    assert!(ctx.client.try_proponer_admin(&candidato).is_err());
+    assert!(!hay_admin_pendiente(&ctx));
+}
+
+#[test]
+fn tercero_no_puede_aceptar_admin() {
+    let ctx = setup();
+    let candidato = Address::generate(&ctx.env);
+    let intruso = Address::generate(&ctx.env);
+
+    ctx.client.proponer_admin(&candidato);
+
+    // Firma el intruso, no el candidato propuesto.
+    ctx.env.mock_auths(&[MockAuth {
+        address: &intruso,
+        invoke: &MockAuthInvoke {
+            contract: &ctx.client.address,
+            fn_name: "aceptar_admin",
+            args: ().into_val(&ctx.env),
+            sub_invokes: &[],
+        },
+    }]);
+    assert!(ctx.client.try_aceptar_admin().is_err());
+    // El pendiente sigue intacto y el admin no cambió.
+    assert!(hay_admin_pendiente(&ctx));
+}
+
+#[test]
+fn aceptar_sin_propuesta_falla() {
+    let ctx = setup();
+    assert_eq!(
+        ctx.client.try_aceptar_admin(),
+        Err(Ok(Error::SinAdminPendiente))
+    );
+}
+
+#[test]
+fn proponer_de_nuevo_reemplaza_al_candidato() {
+    let ctx = setup();
+    let primero = Address::generate(&ctx.env);
+    let segundo = Address::generate(&ctx.env);
+
+    ctx.client.proponer_admin(&primero);
+    ctx.client.proponer_admin(&segundo);
+    ctx.client.aceptar_admin();
+
+    let v = Address::generate(&ctx.env);
+    ctx.client.agregar_verificador(&v);
+    assert_eq!(ctx.env.auths().last().unwrap().0, segundo);
+}

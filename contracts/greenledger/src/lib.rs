@@ -117,6 +117,9 @@ pub struct Movimiento {
 pub enum DataKey {
     /// Address del administrador (instance storage).
     Admin,
+    /// Candidato a nuevo admin propuesto por el admin actual; solo se
+    /// vuelve admin cuando él mismo llama `aceptar_admin` (instance storage).
+    AdminPendiente,
     /// Marca a una Address como verificador autorizado (instance storage).
     Verificador(Address),
     /// Un crédito individual, indexado por su id (persistent storage).
@@ -148,6 +151,7 @@ pub enum Error {
     MismoPropietario = 7,
     LoteVacio = 8,
     LoteDemasiadoGrande = 9,
+    SinAdminPendiente = 10,
 }
 
 #[contract]
@@ -163,6 +167,43 @@ impl GreenLedgerContract {
         }
 
         env.storage().instance().set(&DataKey::Admin, &admin);
+        env.storage()
+            .instance()
+            .extend_ttl(INSTANCE_TTL_UMBRAL, INSTANCE_TTL_EXTENSION);
+
+        Ok(())
+    }
+
+    /// Paso 1 del cambio de admin: el admin actual propone a
+    /// `nuevo_admin`. Hasta que este acepte, el admin actual conserva
+    /// todos los permisos. Proponer de nuevo reemplaza al candidato.
+    pub fn proponer_admin(env: Env, nuevo_admin: Address) -> Result<(), Error> {
+        let admin = Self::obtener_admin(&env)?;
+        admin.require_auth();
+
+        env.storage()
+            .instance()
+            .set(&DataKey::AdminPendiente, &nuevo_admin);
+        env.storage()
+            .instance()
+            .extend_ttl(INSTANCE_TTL_UMBRAL, INSTANCE_TTL_EXTENSION);
+
+        Ok(())
+    }
+
+    /// Paso 2: el candidato propuesto acepta y se convierte en admin. El
+    /// contrato exige la firma del candidato guardado, así que un error
+    /// de dirección en `proponer_admin` nunca deja el contrato sin admin.
+    pub fn aceptar_admin(env: Env) -> Result<(), Error> {
+        let candidato: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::AdminPendiente)
+            .ok_or(Error::SinAdminPendiente)?;
+        candidato.require_auth();
+
+        env.storage().instance().set(&DataKey::Admin, &candidato);
+        env.storage().instance().remove(&DataKey::AdminPendiente);
         env.storage()
             .instance()
             .extend_ttl(INSTANCE_TTL_UMBRAL, INSTANCE_TTL_EXTENSION);
