@@ -26,7 +26,11 @@ La interfaz recorre el flujo principal del MVP definido en el Product Blueprint,
 
 **Aspectos técnicos.** Es HTML, CSS y JavaScript sin paso de compilación. Usa `@stellar/stellar-sdk` 13.1.0 y `@stellar/freighter-api` 3.0.0 desde CDN. La configuración (ID del contrato, URL del RPC y passphrase) está en tres constantes al inicio del script. Respeta el modo claro y oscuro del sistema, reduce las animaciones si el usuario lo prefiere y funciona en pantallas de celular.
 
-**Cómo verlo funcionando:** abrir el enlace de Vercel indicado arriba, o ejecutarlo localmente con las instrucciones del README. Para probar con datos reales, usar los créditos de demostración `DEMO001` a `DEMO004` documentados en `DEMO.md`.
+**Captura real.** Consulta del crédito `CRED001` en testnet: estado retirado, 100 t, propietario, verificador, huella y los tres movimientos del historial (emisión en el ledger 4865387, transferencia en el 4865388 y retiro en el 4865389).
+
+![Consulta pública del crédito CRED001](img/consulta-CRED001.png)
+
+**Cómo verlo funcionando:** abrir el enlace de Vercel indicado arriba, o ejecutarlo localmente con las instrucciones del README. Para probar con datos reales del contrato vigente, consultar `CRED001` (retirado) o `LOTE001` a `LOTE003` (emitidos).
 
 ## 2. Decisión técnica
 
@@ -53,7 +57,7 @@ GreenLedger es un proyecto individual dentro del curso.
 ## 4. Bloqueos y siguiente paso
 
 **Pendiente:**
-- Las operaciones de escritura (emitir, transferir, retirar) requieren Freighter y una cuenta de verificador; solo se probaron las pantallas de lectura contra datos simulados. Falta una prueba completa de punta a punta con la billetera real en testnet.
+- Las pantallas de lectura (consulta, verificación de PDF y certificado) se probaron con datos reales de testnet. Las operaciones de escritura (emitir, transferir, retirar) requieren Freighter y una cuenta de verificador, y falta probarlas de punta a punta con la billetera real.
 - Faltan definir tres firmantes reales e independientes para la multifirma de mainnet.
 - Migrar el SDK del contrato de la versión 22 a la 28 en una rama aparte.
 - Auditoría externa antes de cualquier despliegue en mainnet.
