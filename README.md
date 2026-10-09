@@ -11,6 +11,32 @@ vida controlado en cadena: **Emitido → Transferido (0 o más veces) →
 Retirado (definitivo)**. El objetivo es impedir la **doble venta** y la
 **doble contabilidad** de toneladas de carbono ya certificadas.
 
+## Ejecutar el frontend
+
+**Requisitos:** un navegador moderno (Chrome, Brave o Firefox) y, solo para emitir, transferir o retirar, la extensión [Freighter](https://www.freighter.app/) configurada en **Testnet**. Para servirlo localmente: Python 3 o Node.js.
+
+**Instalación:** no hay dependencias que instalar. El SDK de Stellar y la API de Freighter se cargan por CDN.
+
+**Cómo correrlo:**
+
+```bash
+cd frontend
+python3 -m http.server 8000   # o: npx serve .
+```
+
+Abrir <http://localhost:8000>. Para consultar un crédito de ejemplo, escribir `DEMO001` en la pestaña "Consultar". El ID del contrato, la URL del RPC y la passphrase están en las tres constantes al inicio del `<script>` de `frontend/index.html`.
+
+**Estructura:**
+
+```
+greenledger/
+├── contracts/greenledger/   contrato Soroban (Rust) y sus 34 pruebas
+├── frontend/index.html      interfaz (consulta, verificación, emisión, transferencia, retiro, certificado)
+├── docs/semana3/Documentacion.md
+├── scripts/                 despliegue en testnet
+└── README.md
+```
+
 ## Versiones del contrato
 
 | Versión | Contract ID (testnet)                                       | Estado |
