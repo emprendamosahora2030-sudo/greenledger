@@ -74,13 +74,13 @@ footer{max-width:920px;margin:0 auto;padding:0 18px 40px;color:var(--mut);font-s
 
   <section id="consulta" class="on">
     <h2>Consulta pública</h2><p class="sub">Sin cuenta ni billetera. Escribe el código de un crédito y mira su estado y su historial completo.</p>
-    <div class="row"><div><label for="q-id">Código del crédito</label><input id="q-id" placeholder="DEMO001" maxlength="32" autocomplete="off"></div><button id="q-go">Consultar</button></div>
+    <div class="row"><div><label for="q-id">Código del crédito</label><input id="q-id" placeholder="CRED001" maxlength="32" autocomplete="off"></div><button id="q-go">Consultar</button></div>
     <div class="out" id="q-out"></div>
   </section>
 
   <section id="verificar">
     <h2>Verificar un certificado PDF</h2><p class="sub">El archivo no se sube a ningún servidor: se calcula su huella SHA-256 en tu navegador y se compara con la registrada en la cadena.</p>
-    <label for="v-id">Código del crédito</label><input id="v-id" maxlength="32" placeholder="DEMO001" autocomplete="off">
+    <label for="v-id">Código del crédito</label><input id="v-id" maxlength="32" placeholder="CRED001" autocomplete="off">
     <label for="v-file">Certificado (PDF u otro archivo)</label><input id="v-file" type="file">
     <p style="margin:14px 0 0"><button id="v-go">Comparar con la cadena</button></p>
     <div class="out" id="v-out"></div>

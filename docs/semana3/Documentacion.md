@@ -2,7 +2,7 @@
 
 **Proyecto:** GreenLedger (CIT Has It All S.A.S., Medellín)
 **Red:** Stellar testnet · **Contrato vigente:** [`CANJ564L…P2A5O2`](https://stellar.expert/explorer/testnet/contract/CANJ564LVB4WBAYJWXRQKHJII456RW6XBWWM2FQCSSC6HLG27JP2A5O2)
-**Front en vivo:** _(pegar aquí el enlace de Vercel una vez desplegado la carpeta `frontend/`)_
+**Front en vivo:** https://greenledger-app-emprendamosahora2030-5355s-projects.vercel.app
 
 ## 1. Front construido
 
