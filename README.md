@@ -202,8 +202,8 @@ Nunca subas al repositorio llaves secretas (`S...`) ni frases de
 recuperación. `stellar keys generate` guarda las identidades fuera del
 repo; `.gitignore` excluye además cualquier archivo de identidades o
 `.env` que pudiera crearse localmente.
-   ## Testnet (admin en dos pasos)
-   Contract ID: CBZOZEFKCZDTP4JR23LEA3IRT2QMARPET3ZR74IKEBGYKXTCNVC46YPH
+## Testnet (admin en dos pasos)
+Contract ID: CBZOZEFKCZDTP4JR23LEA3IRT2QMARPET3ZR74IKEBGYKXTCNVC46YPH
 
-   ## Testnet (admin multifirma 2-de-3)
-   Contract ID: CCJWT5XBUIU6IPOCC6GDQC5LLC5XRGGB7NUC2AOCVZWZE3HGB5FKPX3T
+## Testnet (admin multifirma 2-de-3)
+Contract ID: CCJWT5XBUIU6IPOCC6GDQC5LLC5XRGGB7NUC2AOCVZWZE3HGB5FKPX3T
