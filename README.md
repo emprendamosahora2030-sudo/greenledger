@@ -4,7 +4,9 @@ GreenLedger es un registro verificable de créditos de carbono construido
 sobre **Stellar / Soroban**. Es un producto de **CIT Has It All S.A.S.**
 (Medellín, Colombia).
 
-> Estado (28 sep 2026): repositorio abierto públicamente. Contrato v2 vigente y probado en Stellar testnet; próximo hito es sumar despliegue automatizado (CI) y ampliar cobertura de tests antes de evaluar mainnet.
+> **English summary:** GreenLedger is a verifiable carbon-credit registry on Stellar/Soroban. Each credit is a unique asset with an on-chain lifecycle (Issued → Transferred → Retired) that prevents double selling and double counting. The v2 contract (34 tests) is live and verified on Stellar testnet, with batch issuance, ownership history, two-step admin handover and a 2-of-3 multisig admin. Next milestones: CI and real independent signers before mainnet.
+
+> Estado (14 oct 2026): repositorio público. Contrato v2 vigente y probado en Stellar testnet, con cambio de admin en dos pasos y administración multifirma 2-de-3 verificada en testnet. Próximos hitos: despliegue automatizado (CI), definir tres firmantes reales e independientes y evaluar mainnet.
 
 Cada crédito emitido es un activo único (no fungible) con un ciclo de
 vida controlado en cadena: **Emitido → Transferido (0 o más veces) →
@@ -26,17 +28,6 @@ python3 -m http.server 8000   # o: npx serve .
 
 Abrir <http://localhost:8000>. Para consultar un crédito de ejemplo, escribir `DEMO001` en la pestaña "Consultar". El ID del contrato, la URL del RPC y la passphrase están en las tres constantes al inicio del `<script>` de `frontend/index.html`.
 
-**Estructura:**
-
-```
-greenledger/
-├── contracts/greenledger/   contrato Soroban (Rust) y sus 34 pruebas
-├── frontend/index.html      interfaz (consulta, verificación, emisión, transferencia, retiro, certificado)
-├── docs/semana3/Documentacion.md
-├── scripts/                 despliegue en testnet
-└── README.md
-```
-
 ## Versiones del contrato
 
 | Versión | Contract ID (testnet)                                       | Estado |
@@ -46,8 +37,17 @@ greenledger/
 | v2 (sin lotes) | [`CDYAQU4BG5WARTWX6CVILBDAWHU52YP4HHRRL2HICTC6725Y4ZNGGCQF`](https://stellar.expert/explorer/testnet/contract/CDYAQU4BG5WARTWX6CVILBDAWHU52YP4HHRRL2HICTC6725Y4ZNGGCQF) | Reemplazada; se conserva como referencia |
 | v2 (sin historial ni lotes) | [`CDQMOI5XRRMYABQZ6KWXAFMF27C4UBUW4P2I2VA4GCCWSY6A5RYWYU6Y`](https://stellar.expert/explorer/testnet/contract/CDQMOI5XRRMYABQZ6KWXAFMF27C4UBUW4P2I2VA4GCCWSY6A5RYWYU6Y) | Primera instancia v2, reemplazada; se conserva como referencia |
 
-> El v2 vive en `contracts/greenledger/` y **no reemplaza ni redespliega
-> el v1**: son contratos independientes en testnet.
+**Gobernanza del admin (testnet):**
+
+| Variante | Contract ID (testnet) | Descripción |
+|----------|------------------------|-------------|
+| Admin en dos pasos | [`CBZOZEFKCZDTP4JR23LEA3IRT2QMARPET3ZR74IKEBGYKXTCNVC46YPH`](https://stellar.expert/explorer/testnet/contract/CBZOZEFKCZDTP4JR23LEA3IRT2QMARPET3ZR74IKEBGYKXTCNVC46YPH) | `proponer_admin` + `aceptar_admin`: el cambio de admin exige la firma del candidato, así un error de dirección no deja el contrato sin admin. |
+| Admin multifirma 2-de-3 | [`CCJWT5XBUIU6IPOCC6GDQC5LLC5XRGGB7NUC2AOCVZWZE3HGB5FKPX3T`](https://stellar.expert/explorer/testnet/contract/CCJWT5XBUIU6IPOCC6GDQC5LLC5XRGGB7NUC2AOCVZWZE3HGB5FKPX3T) | Cuenta admin con tres firmantes y umbral 2. Usa llaves de prueba; para mainnet se definirán firmantes reales e independientes. |
+
+> El front (`frontend/index.html`) apunta al contrato **v2 vigente**
+> (`CANJ564…A5O2`). El v2 vive en `contracts/greenledger/` y **no
+> reemplaza ni redespliega el v1**: son contratos independientes en
+> testnet.
 
 ## Qué va en la red y qué no
 
@@ -197,11 +197,15 @@ Cuentas de prueba (solo testnet): admin/verificador
 ## Estructura del repositorio
 
 ```
-contracts/greenledger/   Contrato v2 (Cargo.toml, src/lib.rs, src/test.rs)
-scripts/                 Scripts de despliegue a testnet (.sh y .ps1)
-docs/ARQUITECTURA.md     Ciclo de vida, roles, modelo de datos y decisiones de diseño
-DEMO.md                  Guion de demo en vivo con comandos y salidas esperadas
-demo/                    Certificado ficticio y lote de ejemplo usados por DEMO.md
+contracts/greenledger/        Contrato v2 en Rust (src/lib.rs) y sus 34 pruebas (src/test.rs)
+frontend/index.html           Interfaz: consulta, verificación, emisión, transferencia, retiro, certificado
+scripts/                      Scripts de despliegue a testnet (.sh y .ps1)
+docs/ARQUITECTURA.md          Ciclo de vida, roles, modelo de datos y decisiones de diseño
+docs/semana3/Documentacion.md Documentación de la semana 3
+DEMO.md                       Guion de demo en vivo con comandos y salidas esperadas
+demo/                         Certificado ficticio y lote de ejemplo usados por DEMO.md
+ProductBlueprint.md           Blueprint del producto
+LeanCanvas_GreenLedger.png    Lean Canvas
 ```
 
 ## Pendientes antes de mainnet
@@ -211,11 +215,12 @@ Blockchain Builders 101. Mainnet se evalúa cuando haya aliados
 verificadores confirmados (Cercarbono, RIA, Masbosques). Antes de ese
 paso hace falta:
 
-- **Endurecer el rol de admin.** Hoy es una sola llave (`Address` fija en
-  `initialize`) y no se puede cambiar. Antes de mainnet se necesita
-  multifirma y/o una función para transferir el rol de admin, así una
-  llave perdida o comprometida no deja bloqueada la gobernanza de los
-  verificadores.
+- **Firmantes reales para el admin.** Ya existen el cambio de admin en
+  dos pasos y la multifirma 2-de-3 verificados en testnet (ver
+  "Versiones del contrato"). Falta definir tres firmantes reales e
+  independientes y desplegar el contrato limpio con esa administración
+  para mainnet.
+- **CI.** Agregar GitHub Actions con `cargo test` en cada push.
 - Revisar los TTL (`CREDITO_TTL_*`, `INSTANCE_TTL_*`) según el uso real:
   con ~1 año de TTL la renta prepagada es ≈0,9 XLM por crédito. Además,
   agregar una función pública para renovar el TTL de un crédito y de
@@ -228,8 +233,3 @@ Nunca subas al repositorio llaves secretas (`S...`) ni frases de
 recuperación. `stellar keys generate` guarda las identidades fuera del
 repo; `.gitignore` excluye además cualquier archivo de identidades o
 `.env` que pudiera crearse localmente.
-## Testnet (admin en dos pasos)
-Contract ID: CBZOZEFKCZDTP4JR23LEA3IRT2QMARPET3ZR74IKEBGYKXTCNVC46YPH
-
-## Testnet (admin multifirma 2-de-3)
-Contract ID: CCJWT5XBUIU6IPOCC6GDQC5LLC5XRGGB7NUC2AOCVZWZE3HGB5FKPX3T
