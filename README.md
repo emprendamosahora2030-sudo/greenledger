@@ -4,9 +4,9 @@ GreenLedger es un registro verificable de créditos de carbono construido
 sobre **Stellar / Soroban**. Es un producto de **CIT Has It All S.A.S.**
 (Medellín, Colombia).
 
-> **English summary:** GreenLedger is a verifiable carbon-credit registry on Stellar/Soroban. Each credit is a unique asset with an on-chain lifecycle (Issued → Transferred → Retired) that prevents double selling and double counting. The v2 contract (34 tests) is live and verified on Stellar testnet, with batch issuance, ownership history, two-step admin handover and a 2-of-3 multisig admin. Next milestones: CI and real independent signers before mainnet.
+> **English summary:** GreenLedger is a verifiable carbon-credit registry on Stellar/Soroban. Each credit is a unique asset with an on-chain lifecycle (Issued → Transferred → Retired) that prevents double selling and double counting. The v2 contract (34 tests) is live and verified on Stellar testnet, with batch issuance, ownership history, two-step admin handover and a 2-of-3 multisig admin. Next milestones: WASM build in CI and real independent signers before mainnet.
 
-> Estado (14 oct 2026): repositorio público. Contrato v2 vigente y probado en Stellar testnet, con cambio de admin en dos pasos y administración multifirma 2-de-3 verificada en testnet. Próximos hitos: despliegue automatizado (CI), definir tres firmantes reales e independientes y evaluar mainnet.
+> Estado (14 oct 2026): repositorio público. Contrato v2 vigente y probado en Stellar testnet, con cambio de admin en dos pasos y administración multifirma 2-de-3 verificada en testnet. Próximos hitos: compilación a WASM en CI, definir tres firmantes reales e independientes y evaluar mainnet.
 
 Cada crédito emitido es un activo único (no fungible) con un ciclo de
 vida controlado en cadena: **Emitido → Transferido (0 o más veces) →
@@ -220,7 +220,7 @@ paso hace falta:
   "Versiones del contrato"). Falta definir tres firmantes reales e
   independientes y desplegar el contrato limpio con esa administración
   para mainnet.
-- **CI.** Agregar GitHub Actions con `cargo test` en cada push.
+- **CI.** Ya corre `cargo test` en cada push (`.github/workflows/test.yml`). Falta sumar la compilación a WASM.
 - Revisar los TTL (`CREDITO_TTL_*`, `INSTANCE_TTL_*`) según el uso real:
   con ~1 año de TTL la renta prepagada es ≈0,9 XLM por crédito. Además,
   agregar una función pública para renovar el TTL de un crédito y de
