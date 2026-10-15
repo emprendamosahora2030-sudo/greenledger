@@ -3,6 +3,7 @@
 ## Evidencias verificables
 
 - **Producto en línea:** https://greenledger-app-emprendamosahora2030-5355s-projects.vercel.app
+- **Propuesta para la Universidad del Tolima (validación académica):** https://greenledger-tolima.vercel.app/
 - **Video demo + pitch:** pendiente; no se grabó en esta semana. Se publicará en la siguiente iteración.
 - **Contrato vigente (v2, Soroban, testnet):** https://stellar.expert/explorer/testnet/contract/CANJ564LVB4WBAYJWXRQKHJII456RW6XBWWM2FQCSSC6HLG27JP2A5O2
 - **Admin en dos pasos:** https://stellar.expert/explorer/testnet/contract/CBZOZEFKCZDTP4JR23LEA3IRT2QMARPET3ZR74IKEBGYKXTCNVC46YPH
