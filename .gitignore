@@ -35,3 +35,4 @@ identities/
 
 # Snapshots que genera soroban-sdk testutils al correr `cargo test`.
 **/test_snapshots/
+video-capturas/
