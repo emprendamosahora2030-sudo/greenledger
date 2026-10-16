@@ -4,7 +4,7 @@
 
 - **Producto en línea:** https://greenledger-app-emprendamosahora2030-5355s-projects.vercel.app
 - **Landing / pitch en vivo:** https://greenledger-tolima.vercel.app/
-- **Video demo + pitch:** pendiente; no se grabó en esta semana. Se publicará en la siguiente iteración.
+- **Video demo + pitch (≤ 3 min):** https://youtu.be/5mdFQP8r7Q0
 - **Contrato vigente (v2, Soroban, testnet):** https://stellar.expert/explorer/testnet/contract/CANJ564LVB4WBAYJWXRQKHJII456RW6XBWWM2FQCSSC6HLG27JP2A5O2
 - **Admin en dos pasos:** https://stellar.expert/explorer/testnet/contract/CBZOZEFKCZDTP4JR23LEA3IRT2QMARPET3ZR74IKEBGYKXTCNVC46YPH
 - **Admin multifirma 2-de-3:** https://stellar.expert/explorer/testnet/contract/CCJWT5XBUIU6IPOCC6GDQC5LLC5XRGGB7NUC2AOCVZWZE3HGB5FKPX3T
