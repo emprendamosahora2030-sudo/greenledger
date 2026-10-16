@@ -774,7 +774,7 @@ d.getElementById('f').addEventListener('submit',function(ev){
   ev.preventDefault();
   var f=ev.target,n=f.n.value.trim(),o=f.o.value.trim(),e=f.e.value.trim(),note=d.getElementById('note');
   if(f._honey&&f._honey.value)return;
-  if(!n||!o||!/^\S+@\S+\.\S+$/.test(e)){note.textContent='Complete nombre, organización y un correo válido.';note.style.color='#f1d37a';return} if(!d.getElementById('auth').checked){note.textContent='Debes autorizar el tratamiento de datos para enviar la solicitud.';note.style.color='#f1d37a';return}
+  if(!n||!o||!/^\S+@\S+\.\S+$/.test(e)){note.textContent='Complete nombre, organización y un correo válido.';note.style.color='#f1d37a';return} if(!d.getElementById('auth').checked){note.textContent='Debe autorizar el tratamiento de datos para enviar la solicitud.';note.style.color='#f1d37a';return}
   var it=(d.getElementById('intent')||{}).value||'Demo técnica';
   function fallback(){var body='Interés: '+it+'\nNombre: '+n+'\nOrganización: '+o+'\nCorreo: '+e+'\n\nMe gustaría coordinar una revisión de GreenLedger.';location.href='mailto:emprendamosahora2030@gmail.com?subject='+encodeURIComponent('GreenLedger — Contacto de '+o)+'&body='+encodeURIComponent(body)}
   note.textContent='Enviando…';note.style.color='';
