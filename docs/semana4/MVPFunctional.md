@@ -35,7 +35,7 @@ Ajustes aplicados: contrato v2 con 34 pruebas, historial de propiedad, lotes, ro
 
 **De ejecución.** El proyecto lo desarrolla una sola persona, así que el alcance se mantiene mínimo. La preparación para SCF en Stellar Apex va en 5 de 7 criterios; faltan un Instaward completado y tres entregables verificados.
 
-**Pendientes inmediatos:** grabar el video demo, definir los tres firmantes reales, contactar a un organismo verificador y seleccionar un proyecto piloto.
+**Pendientes inmediatos:** definir los tres firmantes reales, contactar a un organismo verificador y seleccionar un proyecto piloto.
 
 ## 3. Plan de validación con usuarios
 
