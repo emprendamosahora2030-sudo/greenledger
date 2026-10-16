@@ -27,7 +27,7 @@ Ajustes aplicados: contrato v2 con 34 pruebas, historial de propiedad, lotes, ro
 
 ## 2. Riesgos y pendientes
 
-**Técnicos.** El contrato opera solo en testnet y no ha sido auditado por un tercero; no debe manejar créditos reales sin esa auditoría. El CI ejecuta las pruebas, pero aún no compila a WASM; es un pendiente conocido. Hay además una inconsistencia menor de licencia entre el repositorio (MIT) y el manifiesto del contrato (Apache-2.0) que debe alinearse.
+**Técnicos.** El contrato opera solo en testnet y no ha sido auditado por un tercero; no debe manejar créditos reales sin esa auditoría. El CI ejecuta las pruebas, pero aún no compila a WASM; es un pendiente conocido. La licencia del repositorio y la del contrato quedaron alineadas en Apache-2.0.
 
 **De gobernanza.** La administración multifirma 2-de-3 funciona, pero con llaves de prueba. Antes de mainnet hay que definir tres firmantes reales e independientes. Un verificador no debe ser firmante del admin, porque el admin autoriza a los verificadores y habría conflicto de intereses.
 
