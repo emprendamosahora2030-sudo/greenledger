@@ -39,14 +39,15 @@ Ajustes aplicados: contrato v2 con 34 pruebas, historial de propiedad, lotes, ro
 
 ## 3. Plan de validación con usuarios
 
-**Usuarios objetivo.** (a) Organismos de verificación y desarrolladores de proyectos de carbono, que emiten y registran créditos; (b) empresas compradoras, que necesitan comprobar que un crédito es único y retirarlo a su nombre; (c) autoridades ambientales y alcaldías, que consultan el registro y lo usan para soportar compensaciones locales.
+**A quién.** Cinco personas por cada perfil de usuario: (a) verificadores o desarrolladores de proyectos de carbono, (b) empresas compradoras y (c) funcionarios ambientales. Se contactan por la red del equipo, en sesiones de 20 minutos por videollamada, con permiso por escrito y sin guardar datos personales de más.
 
-**Hipótesis.** Un registro público con historial inmutable y certificado verificable reduce el tiempo y la desconfianza al comprobar un crédito, frente a hojas de cálculo y PDF enviados por correo.
+**Hipótesis (umbrales fijados antes de ver resultados).**
+1. Creemos que una empresa compradora consultará el historial de un crédito antes de comprarlo, porque hoy se fía del vendedor. Lo sabremos si 4 de 5 consultan un crédito de prueba sin que se les pida.
+2. Creemos que un verificador emitirá un crédito desde su cuenta sin ayuda. Lo sabremos si 4 de 5 completan la emisión con Freighter en menos de 5 minutos.
+3. Creemos que un funcionario ambiental comprobará un certificado PDF contra el hash registrado. Lo sabremos si 3 de 5 lo logran sin ayuda.
 
-**Cómo lo haremos.** En las próximas tres semanas realizaremos entre 6 y 8 entrevistas de 20 minutos: dos con verificadores o desarrolladores de proyecto, dos con empresas compradoras y dos o tres con funcionarios ambientales o investigadores universitarios. En cada sesión mostraremos el producto en línea y pediremos tres tareas sin ayuda: consultar un crédito de ejemplo, verificar un certificado y retirar un crédito de demostración con Freighter.
+**Cómo se observa.** La tarea es un escenario, no una instrucción: "Te llega un crédito de un proveedor y decides si lo compras". Una persona dirige la sesión y un colaborador anota, y nadie ayuda ni señala botones. Se pregunta por hechos del pasado ("cuéntame de la última vez que verificaste un crédito"), no por opiniones sobre el producto.
 
-**Qué mediremos.** Porcentaje de personas que completan cada tarea; tiempo por tarea; punto exacto donde dudan (en especial la firma de la transacción); y una pregunta final: "¿qué necesitaría para usar esto con un crédito real?".
+**Qué se registra.** Tarea completada (sí o no), tiempo, errores de firma y el punto exacto donde la persona se traba, con la observación separada de la interpretación. Cada fricción se prioriza por gravedad, frecuencia y esfuerzo de arreglo.
 
-**Criterio de éxito.** Al menos 5 de cada 8 completan consultar y verificar sin ayuda, y al menos dos organizaciones aceptan evaluar un piloto con un proyecto real.
-
-**Qué haremos con los resultados.** Corregiremos las tres fricciones principales, documentaremos las respuestas en el repositorio y, si hay interés de un verificador acreditado, prepararemos el piloto con un solo proyecto, previa auditoría del contrato.
+**Decisión.** Si una hipótesis no alcanza su umbral, se corrige primero el paso con más fricción (probablemente la firma) y se repite con nuevas personas. Si se cumple la primera, el siguiente paso es un piloto con un proyecto real, previa auditoría del contrato.
